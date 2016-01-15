@@ -3,8 +3,8 @@ Type: Package
 Title: Parsing and Basic Operations on Value Change Dumps
 Version: 0.1
 Date: 2016-01-15
-Author: Markus S. Wamser
-Maintainer: Markus Wamser <r-vcd2r@devel.wamser.eu>
+Authors@R: person("Markus S.", "Wamser", email = "r-vcd2r@devel.wamser.eu",
+  role = c("aut", "cre"))
 Description: This package allows to parse Value Change Dumps from
     Verilog VCD files into R. Basic toogle count statistics, waveform
     plotting and power estimation are supported. Providing function
