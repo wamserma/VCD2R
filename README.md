@@ -8,4 +8,8 @@ clone the git repository
 
 install the buildependencies
 
-```{r} source("R/installBuilddeps.R") ```
+```{r}
+install.packages(c("devtools", "roxygen2", "testthat", "knitr"))
+```
+
+open project in RStudio and hit Ctrl + Shift + L
