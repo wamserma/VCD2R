@@ -26,7 +26,7 @@ open project in RStudio and hit `Ctrl + Shift + L`
 ## other languages
 
 I made this because I wanted a stream oriented parser to make toggle count statistics in R. 
-As far as I know, there is no other [R] VCD parser. Below is a list with parsers in other languages, without making any assurance on functionality ot performance (some are just for parsing, some can also do toggle couts).
+As far as I know, there is no other [R] VCD parser. Below is a list with parsers in other languages, without making any assurance on functionality or performance (some are just for parsing, some can also do toggle couts).
 
 ### Haskell
 [VCD](https://hackage.haskell.org/package/vcd-0.2.2/docs/Data-VCD.html) on [Hackage](https://hackage.haskell.org/)
