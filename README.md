@@ -29,10 +29,10 @@ I made this because I wanted a stream oriented parser to make toggle count stati
 As far as I know, there is no other [R] VCD parser. Below is a list with parsers in other languages, without making any assurance on functionality or performance (some are just for parsing, some can also do toggle couts).
 
 ### Haskell
-[VCD](https://hackage.haskell.org/package/vcd-0.2.2/docs/Data-VCD.html) on [Hackage](https://hackage.haskell.org/)
+[VCD](https://github.com/tomahawkins/vcd/) on [Hackage](https://hackage.haskell.org/package/vcd-0.2.2/)
 
 ### Python
-[verilog_VCD](https://pypi.python.org/pypi/Verilog_VCD) 
+[verilog_VCD](https://pypi.python.org/pypi/Verilog_VCD)  
 [vcd_parser](https://github.com/GordonMcGregor/vcd_parser)
 
 ### Java
