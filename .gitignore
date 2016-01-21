@@ -1,2 +1,5 @@
 .Rhistory
 .Rproj.user/*
+.Rproj.user
+testfile/ref.vcd
+testfile/inter.vcd
