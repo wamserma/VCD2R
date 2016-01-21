@@ -31,6 +31,18 @@ If you have a ```.vpd``` file e.g. from Synopsys VCS, you can convert it to an (
 vcs -vpd2vcd inter.vpd inter.vcd
 ```
 
+if you want to capture version information, you might want to use
+
+```bash
+echo '$version' > inter.vcd
+vcs -vpd2vcd | head -5 >> inter.vcd
+echo '$end' >> inter.vcd
+echo '$date' $'\n''dumped:' $(date -r inter.vpd -R) $'\n''converted:' $(date -R) $'\n''$end' >> inter.vcd
+vcs -vpd2vcd inter.vpd -q >> inter.vcd
+```
+
+
+
 ## parsers in other languages
 
 I made this because I wanted a stream oriented parser to make toggle count statistics in R. 
