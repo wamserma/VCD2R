@@ -42,10 +42,12 @@ parse_version <- function(buf,i,key,con,vcdfile) {
 # variable/signal definitions
 # -------------------------
 
+# parse scope is a bit more complicated:
+# it does recursive parsing of the scope
+# but not here, this is just a dispatch on the outermost occurence
 
 parse_scope <- function(buf,i,key,con,vcdfile) {
-  # this creates the signal-tree in a dept-first-manner
-  ret <- parseStringFields(buf,i,key,con,vcdfile,field = "scope")
+  ret <- parseHierarchy(buf,i,con,vcdfile)
   return(ret)
 }
 
@@ -67,7 +69,7 @@ parse_var <- function(buf,i,key,con,vcdfile) {
 parseStringFields <- function(buf,i,key,con,vcdfile,field) {
   ret <-
     list(
-      chunksParsed = 0,bufPos = i, data = vector(mode = "character")
+      chunksParsed = 0,bufPos = i, data = vector(mode = "character"),buf = buf
     )
   buf$data[i] <-
     substr(buf$data[i],nchar(field) + 3,nchar(buf$data[i]))
@@ -115,5 +117,6 @@ parseStringFields <- function(buf,i,key,con,vcdfile,field) {
     }
   }
   ret$bufPos <- i
+  ret$buf <- buf
   return (ret)
 }

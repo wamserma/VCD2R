@@ -5,7 +5,7 @@
 #' @return a list telling whether EOF has been reached and the data
 
 nextLines <- function(con,skipLines=0) {
-  nLines <- 1000 # stepping
+  nLines <- 2000 # stepping
 
   # skip over skipLines lines
   # seek is from the devil https://stat.ethz.ch/R-manual/R-devel/library/base/html/seek.html

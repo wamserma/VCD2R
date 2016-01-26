@@ -7,7 +7,7 @@
 buildParseReturn <- function(vcdfile = NA,
                              timescale = NA,
                              dumpstart = NA,
-                             variables = NA,
+                             hierarchy = NA,
                              date = NA,
                              version = NA,
                              linesRead = 0) {
@@ -16,8 +16,8 @@ buildParseReturn <- function(vcdfile = NA,
       timescale <- vcdfile$timescale
     if (is.na(dumpstart))
       dumpstart <- vcdfile$dumpstart
-    if (is.na(variables))
-      variables <- vcdfile$variables
+    if (is.na(hierarchy))
+      hierarchy <- vcdfile$hierarchy
     if (is.na(date))
       date <- vcdfile$date
     if (is.na(version))
@@ -29,7 +29,7 @@ buildParseReturn <- function(vcdfile = NA,
     timescale = timescale,
     version = version,
     dumpstart = dumpstart,
-    variables = variables,
+    hierarchy = hierarchy,
     date = date,
     linesRead = linesRead
   )
@@ -54,34 +54,17 @@ parseVCDHeader <- function(vcdfile) {
     "$timescale",
     "$upscope",
     "$var",
-    "$version"
-  )
-  #  "$dumpall",
-  #  "$dumpon",
-  #  "$dumpoff",
-  #  "$dumpvars")
+    "$version",
+    "$dumpall",
+    "$dumpon",
+    "$dumpoff",
+    "$dumpvars")
 
   parseResult <- parseVCDForKeys(vcdfile,keywords,header = T)
   return (parseResult)
 
 }
 
-#' Parse a VCDFile for its body fields, namely the toggle events
-#'
-#' @param vcdfile The file to open.
-#'
-#' @return An list containing the parse results for \code{file}.
-
-parseVCDBody <- function(vcdfile) {
-  keywords <- c("$dumpall",
-                "$dumpon",
-                "$dumpoff",
-                "$dumpvars")
-
-  parseResult <- parseVCDForKeys(vcdfile,keywords,header = F)
-  return (parseResult)
-
-}
 
 #' Parse a VCDFile for a given list of sections
 #' This function is the main workhorse, delegating to specuiaclises
@@ -124,7 +107,6 @@ parseVCDForKeys <- function(vcdfile,keys,header) {
       if (substr(buf$data[i],1,1) != '$') {
         isEmptyLine <- !grepl("[^[:space:]]+",buf$data[i])
         if (!isEmptyLine) {
-
           warning("Ignored data outside block/scope at line ",lines.read + i," in input file.")
         }
         i <- i+1
@@ -159,6 +141,26 @@ parseVCDForKeys <- function(vcdfile,keys,header) {
               break
             }
           }
+
+          if (key == "$scope") {
+            if (!is.na(vcd$hierarchy)) {
+              warning("multiple top modules, only lastest is kept")
+            }
+            vcd$hierarchy = ret$data
+          }
+
+
+          if ((key == "$upscope") | (key == "$var")) {
+            warning("Malformed VCD file: ",key," outside scope.")
+          }
+
+
+          if (any(key == c("$dumpall","$dumpon","$dumpoff","$dumpvars")) & header) {
+            warning("Malformed VCD file: ",key," in header.")
+          }
+
+
+
           # TODO handle the signal parsing
           # build a module/variable/scopetree
           # each entry is either a var or a submodule, vars have a type ->
@@ -170,6 +172,9 @@ parseVCDForKeys <- function(vcdfile,keys,header) {
           # we then need a LUT to map signal to its accumulator group
           # for multi-bit values we create a own module/scope and make single-bit slices
 
+          # TODO: DEFINE var datastructure!
+
+          # record all dump-events, so they will not be plotted as toggles
           # recreating the waveforms can be done by reading all four to-vectors in a mergesort-fashion
 
         } # endif parsed data
