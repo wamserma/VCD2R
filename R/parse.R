@@ -1,7 +1,5 @@
 #' an interface to return parse results, setting sensible defaults
 #'
-#' @param
-#' @param
 #' @return An VCDFileObject containing information on \code{file}.
 
 buildParseReturn <- function(vcdfile = NA,

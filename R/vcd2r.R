@@ -2,10 +2,10 @@
 # The VCDFile Object and Related Objects (the interface stuff)
 # ====================
 
-#' VCD2R -- Loading Value Change Dumps int R.
-#'
-#' TODO: Package doc.
-NULL
+# VCD2R -- Loading Value Change Dumps int R.
+#
+# TODO: Package doc.
+#NULL
 
 #' Create an VCDFileObject
 #'
