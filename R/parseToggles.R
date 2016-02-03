@@ -63,7 +63,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
   # growing vectors/lists at last level are a huge performance problem
   # not huge but FUCKING HORRIBLE
   # linking lists is much better, performance is limited by the memory demand of these deeply nested lists
-  # collpsing them into a vector (unlist) when they get too big might help
+  # collapsing them into a vector (unlist) when they get too big might help
   # the final unlist step also works, when the $val entry holds a vector instead of a single value
 
   vallist<-unique(hash::values(nameBucketLUT))
@@ -72,7 +72,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
 
   for (i in vallist) {
     counts[[i]] <- vector("list",4)
-    names(counts[[i]]) <- c("0","1","z","X")
+    names(counts[[i]]) <- c("0","1","z","x")
     for (j in 1:4) counts[[i]][[j]] <- list(time=vector("list"),count=vector("list"))
   }
 
