@@ -55,11 +55,14 @@ parseToggles <- function(vcd,top=NA,depth=0){
   for (node in relevantSignals) {
     bucket <- node$name
     for (sig in node$Get("name")) {
-      nameBucketLUT[sig] <- bucket
+      nameBucketLUT[[sig]] <- bucket
     }
   }
   on.exit(hash::clear(nameBucketLUT),add=T)
 
+  names(relevantSignals) <- sapply(relevantSignals,function(x) x$name)
+  nodeByNameLUT <- hash::hash(relevantSignals)
+  on.exit(hash::clear(nodeByNameLUT),add=T)
 
   # 6. prepare toggle count structure
   # we use nested lists
@@ -132,7 +135,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
         if (any(indicator == c("b","r"))) {
           valname <- strsplit(substring(event,2)," ")[[1]]
           sig <- valname[2]
-          mbNode <- FindFirstFast(detailSignals,sig)
+          mbNode <- nodeByNameLUT[[sig]]
           # mbNode will be NULL for signals we do not want to count
           if (!is.null(mbNode)) {
             val <-
@@ -152,6 +155,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
     if (any(indicator == c("0","1","x","z"))) {
       sig <- substring(event,2)
       bucket <- nameBucketLUT[[sig]]
+
       # bucket will be NULL for signals we do not want to count
       # we only create a new chain link, when we have a new timestamp
       if (!(is.null(bucket))) {
@@ -168,7 +172,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
     if (any(indicator == c("b","r"))) {
       valname <- strsplit(substring(event,2)," ")[[1]]
       sig <- valname[2]
-      mbNode <- FindFirstFast(detailSignals,sig)
+      mbNode <- nodeByNameLUT[[sig]]
       # mbNode will be NULL for signals we do not want to count
       if (!is.null(mbNode)) {
         val <-
