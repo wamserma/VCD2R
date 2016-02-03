@@ -43,12 +43,16 @@ parseToggles <- function(vcd,top=NA,depth=0){
   # 4. select all multibit signals and add the artificially generated subsignals for counting
   multiBitIdxs <- which(unlist(sapply(accumSignals,function(x) x$bits > 1)))
   vBitSignals <- unlist(sapply(accumSignals[multiBitIdxs],function(node) node$children))
+  relevantSignals <- c(detailSignals,accumSignals[-multiBitIdxs],vBitSignals)
   detailSignals <- c(detailSignals,vBitSignals)
   accumSignals <- c(accumSignals[-multiBitIdxs],vBitSignals)
 
-  # 5. collect the signal names and construct mapping (hashtable)
+  # 5. collect the signal names and construct mapping (hashtable) for signals
+  #    that are mapped to the same group for counting
+  #    also create a mapping from nodenames to nodes
+
   nameBucketLUT <- hash::hash()
-  for (node in c(detailSignals,accumSignals)) {
+  for (node in relevantSignals) {
     bucket <- node$name
     for (sig in node$Get("name")) {
       nameBucketLUT[sig] <- bucket
@@ -122,7 +126,6 @@ parseToggles <- function(vcd,top=NA,depth=0){
       #TODO: handle dump events here
       #until a better solution is here: fast forward
       #TODO: for correct counts we need to parse multibit-values here
-      event <- readLines(con, n = 1)
       while (event != "$end") {
         indicator <- tolower(substr(event,1,1))
 
@@ -141,7 +144,8 @@ parseToggles <- function(vcd,top=NA,depth=0){
         event <- readLines(con, n = 1)
         if (length(event) == 0) break
       }
-
+      #fix the indicator overwritten by inner loop
+      indicator <- "$"
     }
 
     # SCALAR
