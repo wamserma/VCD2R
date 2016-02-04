@@ -20,6 +20,20 @@ strTail <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
     return wrap(s);
     ')
 
+strRevAndSplit <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
+    std::string s = as<std::string>(x);
+    size_t n = s.length();
+    CharacterVector out(n);
+    char t[2] = {0x0,0x0};
+    for (unsigned int i=0; i < n; i++) {
+      t[0] = s[i];
+      out[n-i-1] = t;
+    }
+    return (out);
+    ')
+
+
+
 # map ("0","1","z","x",other) -> (1,2,3,4,0)
 scalarIndicatorToInt <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
     char c = (as<std::string>(x))[0];

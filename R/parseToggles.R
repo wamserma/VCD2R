@@ -16,8 +16,7 @@
 #'
 #' parseToggles(vcd,"top",3)
 #' parseToggles(vcd,"SBOX1",3)
-#'
-#' @importFrom Kmisc str_rev
+
 
 # examples, not run
 # parseToggles(vcd,"top",3)
@@ -200,8 +199,8 @@ parseToggles <- function(vcd,top=NA,depth=0){
         # reverse because in VCD MSB is left
         # reversing before splitting is twice as fast
         # TODO combine into own Rcpp function
-        bits.lastval <- strsplit(str_rev(lastval),"")[[1]]
-        bits.val     <- strsplit(str_rev(val),"")[[1]]
+        bits.lastval <- strRevAndSplit(lastval)
+        bits.val     <- strRevAndSplit(val)
 
         whichToggled <- which(!bits.lastval == bits.val)
         bitsig <- sapply(whichToggled, function(i) paste0(c(sig,".",as.character(i - 1)),collapse = ""))

@@ -15,7 +15,6 @@ Imports:
     data.tree,
     hash,
     inline,
-    Kmisc,
     Rcpp
 URL: https://github.com/wamserma/VCD2R/
 BugReports: https://github.com/wamserma/VCD2R/issues
