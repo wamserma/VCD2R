@@ -51,6 +51,10 @@ parseToggles <- function(vcd,top=NA,depth=0){
   #    that are mapped to the same group for counting
   #    also create a mapping from nodenames to nodes
 
+  #    signal names are not unique, see IEEE Std 1364-2001 version C §18.2.3.8, Comment b (p.336)
+  #    in that case the toggling event is accounted for only once
+  #    we do not distinguish by modules
+
   nameBucketLUT <- hash::hash()
   for (node in relevantSignals) {
     bucket <- node$name
