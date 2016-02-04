@@ -161,9 +161,9 @@ parseToggles <- function(vcd,top=NA,depth=0){
     }
 
     # SCALAR
-    if (any(indicator == c("0","1","x","z"))) {
-      #if (any(indicator == c("0","1","x","z"))) {
-      # map indicator to 1L .. 4L accrding to above list, 0 if no match, do before if stmt
+    indicatorIdx <- scalarIndicatorToInt(indicator)
+    # if (any(indicator == c("0","1","x","z"))) {
+    if (indicatorIdx) {
 
       sig <- strTail(event)
       bucket <- nameBucketIdxLUT[[sig]]
@@ -173,18 +173,18 @@ parseToggles <- function(vcd,top=NA,depth=0){
       # the lookups are taking some time, but assigning the results to intermediate values
       # make R copy the whole linked list of list which is a real performance killer
       if (!(is.null(bucket))) {
-        tval <- counts[[bucket]][[indicator]]$time$val
+        tval <- counts[[bucket]][[indicatorIdx]]$time$val
         if ((!is.null(tval)) && (tval != timestamp)) {
-          counts[[bucket]][[indicator]]$time <- list(prev=counts[[bucket]][[indicator]]$time)
-          counts[[bucket]][[indicator]]$count <- list(prev=counts[[bucket]][[indicator]]$count)
+          counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time)
+          counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count)
         }
-        counts[[bucket]][[indicator]]$time$val <- timestamp
-        counts[[bucket]][[indicator]]$count$val <- incwithNULL(counts[[bucket]][[indicator]]$count$val)
+        counts[[bucket]][[indicatorIdx]]$time$val <- timestamp
+        counts[[bucket]][[indicatorIdx]]$count$val <- incwithNULL(counts[[bucket]][[indicatorIdx]]$count$val)
       }
     }
 
     # MULTIBIT-VARIABLE
-    if (any(indicator == c("b","r"))) {
+    if (isMultiBit(indicator)) {
       valname <- strsplit(strTail(event)," ")[[1]]
       sig <- valname[2]
       mbNode <- nodeByNameLUT[[sig]]
@@ -200,6 +200,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
         # compare bitwise and set toggle counts
         # reverse because in VCD MSB is left
         # reversing before splitting is twice as fast
+        # TODO combine into own Rcpp function
         bits.lastval <- strsplit(str_rev(lastval),"")[[1]]
         bits.val     <- strsplit(str_rev(val),"")[[1]]
 
@@ -209,14 +210,14 @@ parseToggles <- function(vcd,top=NA,depth=0){
         for (j in 1:length(whichToggled)) {
           i <- whichToggled[j]
           bucket <- buckets[j]
-          indicator <- bits.val[i]
-          tval <- counts[[bucket]][[indicator]]$time$val
+          indicatorIdx <- scalarIndicatorToInt(bits.val[i])
+          tval <- counts[[bucket]][[indicatorIdx]]$time$val
           if ((!is.null(tval)) && (tval != timestamp)) {
-            counts[[bucket]][[indicator]]$time <- list(prev=counts[[bucket]][[indicator]]$time)
-            counts[[bucket]][[indicator]]$count <- list(prev=counts[[bucket]][[indicator]]$count)
+            counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time)
+            counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count)
           }
-          counts[[bucket]][[indicator]]$time$val <- timestamp
-          counts[[bucket]][[indicator]]$count$val <- incwithNULL(counts[[bucket]][[indicator]]$count$val)
+          counts[[bucket]][[indicatorIdx]]$time$val <- timestamp
+          counts[[bucket]][[indicatorIdx]]$count$val <- incwithNULL(counts[[bucket]][[indicatorIdx]]$count$val)
         }
 
         multibitvals[[sig]] <- val

@@ -14,13 +14,33 @@ strHeadLower <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
     return wrap(c);
     ')
 
-
 strTail <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
     std::string s = as<std::string>(x);
     s = &(s[1]);
     return wrap(s);
     ')
 
+# map ("0","1","z","x",other) -> (1,2,3,4,0)
+scalarIndicatorToInt <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
+    char c = (as<std::string>(x))[0];
+    unsigned int ret;
+      if (c == \'0\') {ret = 1;}
+      else if (c == \'1\') {ret = 2;}
+      else if (c == \'z\') {ret = 3;}
+      else if (c == \'x\') {ret = 4;}
+      else {ret = 0;}
+    return wrap(ret);
+    ')
+
+# map ("b","r"other) -> (1,2,0)
+isMultiBit <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
+                                    char c = (as<std::string>(x))[0];
+                                    unsigned int ret;
+                                    if (c == \'b\') {ret = 1;}
+                                    else if (c == \'r\') {ret = 2;}
+                                    else {ret = 0;}
+                                    return wrap(ret);
+                                    ')
 # Note: we are assuming less that 2147483647 toggles per (accumulated) signal per timestamp,
 # which is safe for all design sizes we might want to handle here
 
