@@ -74,14 +74,30 @@ parseToggles <- function(vcd,top=NA,depth=0){
   # the final unlist step also works, when the $val entry holds a vector instead of a single value
 
   vallist<-unique(hash::values(nameBucketLUT))
+
+  # make lists of lists of lists
+  # about twice as fast as hashtable of lists of lists
   counts <- vector("list",length(vallist))
   names(counts)<-vallist
-
   for (i in vallist) {
     counts[[i]] <- vector("list",4)
     names(counts[[i]]) <- c("0","1","z","x")
     for (j in 1:4) counts[[i]][[j]] <- list(time=vector("list"),count=vector("list"))
   }
+
+  # making counts a hashtable makes things surprisingly slower,
+  # but we can make a sig to bucketIdx LUT for faster list element accesses later
+  # hashtable of lists of lists .. suprisingly slower ..
+
+  nameIdxList <- 1L:as.integer(length(counts))
+  names(nameIdxList) <- names(counts)
+
+  mapping<-sapply(hash::names.hash(nameBucketLUT),function(x) nameIdxList[[nameBucketLUT[[x]]]])
+  names(mapping)<-hash::names.hash(nameBucketLUT)
+  nameBucketIdxLUT <- hash::hash(mapping)
+  on.exit(hash::clear(nameBucketIdxLUT),add=T)
+
+  # TODO: skip the intermediate hashtable
 
 
   # 7. let the parsing fun begin (using readr::read_lines)
@@ -111,10 +127,6 @@ parseToggles <- function(vcd,top=NA,depth=0){
   timestamp <- "0"
   multibitvals <- hash::hash()
   on.exit(hash::clear(multibitvals),add=T)
-
-  lcount <- 0
-  itime <- proc.time()[3]
-  ltime <- proc.time()[3]
 
   #readLine return empty vector when EOF is reached, "" for an empty line
   while(length(event != 0)) {
@@ -153,11 +165,17 @@ parseToggles <- function(vcd,top=NA,depth=0){
 
     # SCALAR
     if (any(indicator == c("0","1","x","z"))) {
+      #if (any(indicator == c("0","1","x","z"))) {
+      # map indicator to 1L .. 4L accrding to above list, 0 if no match, do before if stmt
+
       sig <- substring(event,2)
-      bucket <- nameBucketLUT[[sig]]
+      #bucket <- nameBucketLUT[[sig]]
+      bucket <- nameBucketIdxLUT[[sig]]
 
       # bucket will be NULL for signals we do not want to count
       # we only create a new chain link, when we have a new timestamp
+      # the lookups are taking some time, but assigning the results to intermediate values
+      # make R copy the whole linked list of list which is a real performance killer
       if (!(is.null(bucket))) {
         if ((!is.null(counts[[bucket]][[indicator]]$time$val)) && (counts[[bucket]][[indicator]]$time$val != timestamp)) {
           counts[[bucket]][[indicator]]$time <- list(prev=counts[[bucket]][[indicator]]$time)
@@ -165,7 +183,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
         }
         counts[[bucket]][[indicator]]$time$val <- timestamp
         counts[[bucket]][[indicator]]$count$val <- incwithNULL(counts[[bucket]][[indicator]]$count$val)
-     }
+      }
     }
 
     # MULTIBIT-VARIABLE
@@ -191,7 +209,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
         for (i in which(!bits.lastval == bits.val)) {
           as.character(i - 1)
           bitsig <- paste0(c(sig,".",as.character(i - 1)),collapse = "")
-          bucket <- nameBucketLUT[[bitsig]]
+          bucket <- nameBucketIdxLUT[[bitsig]]
           indicator <- bits.val[i]
           if ((!is.null(counts[[bucket]][[indicator]]$time$val)) && (counts[[bucket]][[indicator]]$time$val != timestamp)) {
             counts[[bucket]][[indicator]]$time <- list(prev=counts[[bucket]][[indicator]]$time)
@@ -228,8 +246,15 @@ parseToggles <- function(vcd,top=NA,depth=0){
     }
   }
 
-  #elapsed time when debugging
-  #print(proc.time()[3]-itime)
+  #hash unlisting
+  #for (i in hash::keys(counts)) {
+  #  for (j in names(counts[[i]])) {
+  #    times <- unlist(counts[[i]][[j]]$time,use.names = F)
+  #    counts[[i]][[j]]<-unlist(counts[[i]][[j]]$count,use.names = F)
+  #    names(counts[[i]][[j]])<-times
+  #  }
+  #}
+  #rcounts<-as.list(counts)
 
   return(list(hierarchy = vartree,counts = counts))
 }
