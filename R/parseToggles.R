@@ -9,6 +9,9 @@
 #' @param top The top signal, if none is given the top signal of the vcdfile is taken
 #' @param depth depth in the module tree before signals are accumulated, default=0 (top only), -1 is infinite depth
 #'
+#' For more elaborate filtering of nodes, pre-edit the signal-tree in the vcd-object.
+#' Black/Whitelisting of signals is an optional further enhancement.
+#'
 #' @return a module tree and a list of toggle counts and a list of dump events
 #'
 #' parseToggles(vcd,"top",3)
@@ -37,8 +40,6 @@ parseToggles <- function(vcd,top=NA,depth=0){
   detailLevel <- min(vartree$height,rootLevel + depth)
   detailSignals <- data.tree::Traverse(vartree, traversal = "level", pruneFun = function(x) {x$level <= detailLevel}) # keep all with a lower level
   accumSignals <- data.tree::Traverse(vartree, traversal = "level", filterFun = function(x) {x$level == detailLevel})
-
-  # TODO: allow filtering on var type: argument varfilter is a character vector of types, the filter function is expandend by any(x$type==varfilter)
 
   # 4. select all multibit signals and add the artificially generated subsignals for counting
   multiBitIdxs <- which(unlist(sapply(accumSignals,function(x) x$bits > 1)))
@@ -94,8 +95,6 @@ parseToggles <- function(vcd,top=NA,depth=0){
   nameBucketIdxLUT <- hash::hash(mapping)
   on.exit(hash::clear(nameBucketIdxLUT),add=T)
 
-  # TODO: skip the intermediate hashtable
-
 
   # 7. let the parsing fun begin (using readr::read_lines)
   # TODO: here we assume one entry per line.
@@ -135,13 +134,13 @@ parseToggles <- function(vcd,top=NA,depth=0){
     }
     # DUMP-EVENT
     if (indicator == "$") {
-      #TODO: handle dump events here
-      #until a better solution is here: fast forward
-      #TODO: for correct counts we need to parse multibit-values here
+      #dump events are currently ignored
+      #just cache of multibit-Signals is updated
+
       while (event != "$end") {
         indicator <- strHeadLower(event)
 
-        if (any(indicator == c("b","r"))) {
+        if (isMultiBit(indicator)) {
           valname <- strsplit(strTail(event)," ")[[1]]
           sig <- valname[2]
           mbNode <- nodeByNameLUT[[sig]]
