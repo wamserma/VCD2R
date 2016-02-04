@@ -116,7 +116,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
   # we assume dumpstart was set sensible and scan to the next timestamp
   readLines(con, n = (vcd$dumpstart-2)) #skip
   event <- readLines(con, n = 1)
-  while (substr(event,1,1) != "#") {
+  while (strHead(event) != "#") {
     event <- readLines(con, n = 1) #readr::read_Lines does not work for subsequent reads on a connection
     if (length(event) == 0) {
       warning("premature end of file")
@@ -129,23 +129,23 @@ parseToggles <- function(vcd,top=NA,depth=0){
   on.exit(hash::clear(multibitvals),add=T)
 
   #readLine return empty vector when EOF is reached, "" for an empty line
-  while(length(event != 0)) {
-    indicator <- tolower(substr(event,1,1))
-    # TIMESTAMP
+  while(length(event)) {
+    indicator <- strHeadLower(event)
+
+        # TIMESTAMP
     if (indicator == "#") {
-      timestamp <- substring(event,2)
+      timestamp <- strTail(event)
     }
     # DUMP-EVENT
     if (indicator == "$") {
-      #substring(event,2)
       #TODO: handle dump events here
       #until a better solution is here: fast forward
       #TODO: for correct counts we need to parse multibit-values here
       while (event != "$end") {
-        indicator <- tolower(substr(event,1,1))
+        indicator <- strHeadLower(event)
 
         if (any(indicator == c("b","r"))) {
-          valname <- strsplit(substring(event,2)," ")[[1]]
+          valname <- strsplit(strTail(event)," ")[[1]]
           sig <- valname[2]
           mbNode <- nodeByNameLUT[[sig]]
           # mbNode will be NULL for signals we do not want to count
@@ -168,8 +168,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
       #if (any(indicator == c("0","1","x","z"))) {
       # map indicator to 1L .. 4L accrding to above list, 0 if no match, do before if stmt
 
-      sig <- substring(event,2)
-      #bucket <- nameBucketLUT[[sig]]
+      sig <- strTail(event)
       bucket <- nameBucketIdxLUT[[sig]]
 
       # bucket will be NULL for signals we do not want to count
@@ -188,7 +187,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
 
     # MULTIBIT-VARIABLE
     if (any(indicator == c("b","r"))) {
-      valname <- strsplit(substring(event,2)," ")[[1]]
+      valname <- strsplit(strTail(event)," ")[[1]]
       sig <- valname[2]
       mbNode <- nodeByNameLUT[[sig]]
       # mbNode will be NULL for signals we do not want to count

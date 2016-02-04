@@ -9,10 +9,14 @@ Description: This package allows to parse Value Change Dumps from
     Verilog VCD files into R. Basic toogle count statistics, waveform
     plotting and power estimation are supported. Providing function
     hooks from the stream-oriented parser is a TODO, depending on demand.
+LinkingTo:
+    Rcpp
 Imports:
     data.tree,
     hash,
-    Kmisc
+    inline,
+    Kmisc,
+    Rcpp
 URL: https://github.com/wamserma/VCD2R/
 BugReports: https://github.com/wamserma/VCD2R/issues
 License: BSD-2 + file LICENSE
