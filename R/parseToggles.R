@@ -65,10 +65,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
   on.exit(hash::clear(nodeByNameLUT),add=T)
 
   # 6. prepare toggle count structure
-  # we use nested lists
-  # TODO: use hash instead of list on top level and check performance
   # growing vectors/lists at last level are a huge performance problem
-  # not huge but FUCKING HORRIBLE
   # linking lists is much better, performance is limited by the memory demand of these deeply nested lists
   # collapsing them into a vector (unlist) when they get too big might help
   # the final unlist step also works, when the $val entry holds a vector instead of a single value
@@ -176,7 +173,8 @@ parseToggles <- function(vcd,top=NA,depth=0){
       # the lookups are taking some time, but assigning the results to intermediate values
       # make R copy the whole linked list of list which is a real performance killer
       if (!(is.null(bucket))) {
-        if ((!is.null(counts[[bucket]][[indicator]]$time$val)) && (counts[[bucket]][[indicator]]$time$val != timestamp)) {
+        tval <- counts[[bucket]][[indicator]]$time$val
+        if ((!is.null(tval)) && (tval != timestamp)) {
           counts[[bucket]][[indicator]]$time <- list(prev=counts[[bucket]][[indicator]]$time)
           counts[[bucket]][[indicator]]$count <- list(prev=counts[[bucket]][[indicator]]$count)
         }
@@ -205,12 +203,15 @@ parseToggles <- function(vcd,top=NA,depth=0){
         bits.lastval <- strsplit(str_rev(lastval),"")[[1]]
         bits.val     <- strsplit(str_rev(val),"")[[1]]
 
-        for (i in which(!bits.lastval == bits.val)) {
-          as.character(i - 1)
-          bitsig <- paste0(c(sig,".",as.character(i - 1)),collapse = "")
-          bucket <- nameBucketIdxLUT[[bitsig]]
+        whichToggled <- which(!bits.lastval == bits.val)
+        bitsig <- sapply(whichToggled, function(i) paste0(c(sig,".",as.character(i - 1)),collapse = ""))
+        buckets <- sapply(bitsig, function(x) nameBucketIdxLUT[[x]])
+        for (j in 1:length(whichToggled)) {
+          i <- whichToggled[j]
+          bucket <- buckets[j]
           indicator <- bits.val[i]
-          if ((!is.null(counts[[bucket]][[indicator]]$time$val)) && (counts[[bucket]][[indicator]]$time$val != timestamp)) {
+          tval <- counts[[bucket]][[indicator]]$time$val
+          if ((!is.null(tval)) && (tval != timestamp)) {
             counts[[bucket]][[indicator]]$time <- list(prev=counts[[bucket]][[indicator]]$time)
             counts[[bucket]][[indicator]]$count <- list(prev=counts[[bucket]][[indicator]]$count)
           }
@@ -223,13 +224,6 @@ parseToggles <- function(vcd,top=NA,depth=0){
     }
 
     event <- readLines(con, n = 1)
-    #lcount <- lcount + 1
-    #if ((lcount %% 10000) == 1) {
-    #  ptime<-((proc.time()[3]-itime)/lcount)*(6035158-lcount-vcd$dumpstart)
-    #  names(ptime)<-c("remaining (seconds)")
-    #  print(ptime)
-    #  ltime <- proc.time()[3]
-    #}
   }
 
   #finally we can prune vartree
@@ -244,16 +238,6 @@ parseToggles <- function(vcd,top=NA,depth=0){
       names(counts[[i]][[j]])<-times
     }
   }
-
-  #hash unlisting
-  #for (i in hash::keys(counts)) {
-  #  for (j in names(counts[[i]])) {
-  #    times <- unlist(counts[[i]][[j]]$time,use.names = F)
-  #    counts[[i]][[j]]<-unlist(counts[[i]][[j]]$count,use.names = F)
-  #    names(counts[[i]][[j]])<-times
-  #  }
-  #}
-  #rcounts<-as.list(counts)
 
   return(list(hierarchy = vartree,counts = counts))
 }
