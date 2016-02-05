@@ -83,7 +83,8 @@ parseToggles <- function(vcd,top=NA,depth=0){
   for (i in vallist) {
     counts[[i]] <- vector("list",4)
     names(counts[[i]]) <- c("0","1","z","x")
-    for (j in 1:4) counts[[i]][[j]] <- list(time=vector("list"),count=vector("list"))
+    # a dummy timestamp "X" spares checking for NULL/NAN in the inner loop
+    for (j in 1:4) counts[[i]][[j]] <- list(time=list(val="X"),count=list(val=0L))
   }
 
   timestamps <- vector("list",0L)
@@ -180,11 +181,11 @@ parseToggles <- function(vcd,top=NA,depth=0){
       if (!(is.null(bucket))) {
         tval <- counts[[bucket]][[indicatorIdx]]$time$val
         if ((!is.null(tval)) && (tval != timestamp)) {
-          counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time)
-          counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count)
+          counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time,val=timestamp)
+          counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count,val=1L)
+        } else {
+          counts[[bucket]][[indicatorIdx]]$count$val <- counts[[bucket]][[indicatorIdx]]$count$val + 1L
         }
-        counts[[bucket]][[indicatorIdx]]$time$val <- timestamp
-        counts[[bucket]][[indicatorIdx]]$count$val <- incwithNULL(counts[[bucket]][[indicatorIdx]]$count$val)
       }
     }
 
@@ -203,9 +204,6 @@ parseToggles <- function(vcd,top=NA,depth=0){
           lastval <- val
 
         # compare bitwise and set toggle counts
-        # reverse because in VCD MSB is left
-        # reversing before splitting is twice as fast
-        # TODO combine into own Rcpp function
         bits.lastval <- strRevAndSplit(lastval)
         bits.val     <- strRevAndSplit(val)
 
@@ -218,11 +216,11 @@ parseToggles <- function(vcd,top=NA,depth=0){
           indicatorIdx <- scalarIndicatorToInt(bits.val[i])
           tval <- counts[[bucket]][[indicatorIdx]]$time$val
           if ((!is.null(tval)) && (tval != timestamp)) {
-            counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time)
-            counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count)
+            counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time,val=timestamp)
+            counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count,val=1L)
+          } else {
+            counts[[bucket]][[indicatorIdx]]$count$val <- counts[[bucket]][[indicatorIdx]]$count$val + 1L
           }
-          counts[[bucket]][[indicatorIdx]]$time$val <- timestamp
-          counts[[bucket]][[indicatorIdx]]$count$val <- incwithNULL(counts[[bucket]][[indicatorIdx]]$count$val)
         }
 
         multibitvals[[sig]] <- val
@@ -239,8 +237,9 @@ parseToggles <- function(vcd,top=NA,depth=0){
   # and unlist the counts
   for (i in names(counts)) {
     for (j in names(counts[[i]])) {
-      times <- unlist(counts[[i]][[j]]$time,use.names = F)
-      counts[[i]][[j]]<-unlist(counts[[i]][[j]]$count,use.names = F)
+      # [-1] removes the dummy timestamp
+      times <- unlist(counts[[i]][[j]]$time,use.names = F)[-1]
+      counts[[i]][[j]]<-unlist(counts[[i]][[j]]$count,use.names = F)[-1]
       names(counts[[i]][[j]])<-times
     }
   }
