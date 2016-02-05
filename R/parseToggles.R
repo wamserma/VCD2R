@@ -37,7 +37,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
   # 3. prepare the list of signals
   rootLevel <- vartree$level # in data.tree this is 1 (but was documented as 0 in v0.2.4)
   detailLevel <- min(vartree$height,rootLevel + depth)
-  detailSignals <- data.tree::Traverse(vartree, traversal = "level", pruneFun = function(x) {x$level <= detailLevel}) # keep all with a lower level
+  detailSignals <- data.tree::Traverse(vartree, traversal = "level", pruneFun = function(x) {(x$level <= detailLevel)}) # keep all with a lower level
 
   # 4. select all multibit signals and add the artificially generated subsignals for counting
   # the individual bits of the last level nultibit-values need to be included now
@@ -232,8 +232,8 @@ parseToggles <- function(vcd,top=NA,depth=0){
 
 
   #finally we can prune vartree
-  #vartree$Prune(pruneFun = function(x) {x$level <= (detailLevel + topNode$level)}) # broken in data.tree 0.2.4
-  vartree <- Clone(topNode,attributes = T,pruneFun = function(x) {x$level <= (detailLevel + topNode$level)})
+  #vartree$Prune(pruneFun = function(x) {(x$level <= (detailLevel + topNode$level)) || ((x$level == detailLevel + topNode$level + 1) && (x$parent$bits > 1))}) # broken in data.tree 0.2.4
+  vartree <- Clone(topNode,attributes = T,pruneFun = function(x) {(x$level <= (detailLevel + topNode$level)) || ((x$level == detailLevel + topNode$level + 1) && (x$parent$bits > 1))  })
 
   # and unlist the counts
   for (i in names(counts)) {
