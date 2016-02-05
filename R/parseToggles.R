@@ -86,6 +86,8 @@ parseToggles <- function(vcd,top=NA,depth=0){
     for (j in 1:4) counts[[i]][[j]] <- list(time=vector("list"),count=vector("list"))
   }
 
+  timestamps <- vector("list",0L)
+
   # making counts a hashtable makes things surprisingly slower,
   # but we can make a sig to bucketIdx LUT for faster list element accesses later
   # hashtable of lists of lists .. suprisingly slower ..
@@ -134,6 +136,7 @@ parseToggles <- function(vcd,top=NA,depth=0){
         # TIMESTAMP
     if (indicator == "#") {
       timestamp <- strTail(event)
+      timestamps<-list(prev=timestamps,val=timestamp)
     }
     # DUMP-EVENT
     if (indicator == "$") {
@@ -242,6 +245,8 @@ parseToggles <- function(vcd,top=NA,depth=0){
     }
   }
 
-  return(list(hierarchy = vartree,counts = counts))
+  timestamps <- unlist(timestamps, use.names = F)
+
+  return(list(hierarchy = vartree,counts = counts,timestamps = timestamps))
 }
 
