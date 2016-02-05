@@ -229,9 +229,11 @@ parseToggles <- function(vcd,top=NA,depth=0){
     event <- readLines(con, n = 1)
   }
 
+
+
   #finally we can prune vartree
-  #vartree$Prune(pruneFun = function(x) {x$level <= detailLevel}) # broken in data.tree 0.2.4
-  vartree <- Clone(topNode,attributes = T,pruneFun = function(x) {x$level <= detailLevel})
+  #vartree$Prune(pruneFun = function(x) {x$level <= (detailLevel + topNode$level)}) # broken in data.tree 0.2.4
+  vartree <- Clone(topNode,attributes = T,pruneFun = function(x) {x$level <= (detailLevel + topNode$level)})
 
   # and unlist the counts
   for (i in names(counts)) {
