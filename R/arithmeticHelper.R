@@ -59,8 +59,8 @@ isMultiBit <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
 # which is safe for all design sizes we might want to handle here
 
 addwithNA<-function(a,b) {
-  if (is.na(a)) a<-0L
-  if (is.na(b)) b<-0L
+  if (is.na(a)) return(b)
+  if (is.na(b)) return(a)
   return(a+b)
 }
 
@@ -102,6 +102,111 @@ addToggleVecs <- function(a,b){
    return(c)
 }
 
+stringnumLT <- function(x,y){
+  nx <- nchar(x)
+  ny <- nchar(y)
+
+  if (nx != ny) return (nx < ny)
+  return (x < y)
+}
+
+# adds up the toggle counts of multiple count-vectors by timestamp/name
+# but does not necessarily preserve the order of the timestamps when reconstructing them
+# the time-overhead for reconstruction is negligible, runtime depends only on length of timestamps
+# so this is more effective than making bigger vectors with a lot of NAs
+
+# blowing up into a full matrix is much faster than using the sapply-version in .test, therefore the latter
+# is later used as golden sample in a unit test
+
+addToggleVecsByName.test <- function(vnames,vtype=c("0","1","z","x"),counts=vector("list",0L)){
+  if (length(counts)==0) {
+    return(counts)
+  }
+  timestamps<-unique(unlist(sapply(vnames,function(x) names(counts[[x]][[vtype]]))))
+  if (length(timestamps) == 0) return(vector("integer",0L))
+  varcounts<-sapply(counts[vnames],function(var) var[[vtype]])
+  ret<-sapply(timestamps,function(ts) {
+    sum(unlist(sapply(varcounts,function(var) {
+      unname(var[ts])
+    })),na.rm = T)
+  })
+  names(ret)<-timestamps
+  return(ret)
+}
+
+# assumes all required signals are available, will fail otherwise when trying to expand NULL into a column vector
+addToggleVecsByName.mat <- function(vnames,vtype=c("0","1","z","x"),counts=vector("list",0L)){
+  if (length(counts)==0) {
+    return(counts)
+  }
+  timestamps<-unique(unlist(sapply(vnames,function(x) names(counts[[x]][[vtype]]))))
+  if (length(timestamps) == 0) return(vector("integer",0L))
+
+  mat<-matrix(NA_integer_,nrow=length(timestamps),ncol = length(vnames), dimnames=list(timestamps,vnames))
+
+  for (var in vnames) {
+    if ((!is.null(counts[[var]][[vtype]])) && (length(counts[[var]][[vtype]])>0)){
+      newcol<-counts[[var]][[vtype]][timestamps]
+      if (length(newcol)>0) mat[,var]<-newcol
+    }
+  }
+  ret<-rowSums(mat,na.rm=T)
+
+  names(ret)<-timestamps
+  return(ret)
+}
+
+# iterative scanning  -- fastest version
+# assumes all required signals are available, will fail otherwise when trying to access a element of NULL-vector
+# assumes all timestamps are in correct order
+# performance is acceptable, if parallelisation is desired, this is best done over varcounts to avoid unnecessary copying of input data, see also Rcpp parallel
+addToggleVecsByName <- function(vnames,vtype=c("0","1","z","x"),counts=vector("list",0L)){
+  if (length(counts)==0) {
+    return(counts)
+  }
+  timestamps<-unique(unlist(sapply(vnames,function(x) names(counts[[x]][[vtype]]))))
+  if (length(timestamps) == 0) return(vector("integer",0L))
+  timestamps<-sorttimestamps(timestamps)
+  varcounts<-sapply(counts[vnames],function(var) var[[vtype]])
+  varcounts<-varcounts[!sapply(varcounts,function(x) {is.null(x) || (length(x) < 1)})]
+  countIdxs<-rep(1L,length(varcounts))
+  matchIdx<-vector("integer",0L)
+  countHeads<-sapply(1L:length(varcounts),function(x) varcounts[[x]][countIdxs[[x]]])
+  ret <- vector("integer",length(timestamps))
+  names(ret)<-timestamps
+
+  # the following assumes timestamps are sorted!
+  for (ts in timestamps) {
+    if (length(matchIdx)>0) {
+      partial<-sapply(matchIdx,function(x) varcounts[[x]][countIdxs[[x]]])
+      countHeads[matchIdx]<-partial
+      names(countHeads)[matchIdx]<-names(partial)
+    }
+    matchIdx<-which(names(countHeads)==ts)
+    ret[[ts]]<-sum(countHeads[matchIdx])
+    countIdxs[matchIdx]<-countIdxs[matchIdx]+1L
+  }
+  return(ret)
+}
+
+# sorts timestamps/numbers stored as strings, dropping empty strings
+# throws error for emtpy vector input
+sorttimestamps<-function(x){
+  xchar<-sapply(x,nchar)
+  maxlen<-max(xchar)
+  ret<-unlist(lapply(1:maxlen,function(i) sort(x[xchar==i])))
+  return(ret)
+  }
+
+
+#tests
+#all(addToggleVecsL2(u,t,s)==addToggleVecsL(u,t,s))
+#microbenchmark::microbenchmark(loop=addToggleVecsL2(u,t,s),
+#                               vec=addToggleVecsL(u,t,s),
+#                               times=10)
+
+
+
 #tests
 # t<-1:4
 # names(t)<-c("13","24","36","48")
@@ -109,3 +214,4 @@ addToggleVecs <- function(a,b){
 # names(u)<-c("17","24","36","42","48","51")
 # ref <- c(1,1,4,6,4,9,6)
 # names(ref)<-c("13","17","24","36","42","48","51")
+# all(addToggleVecs(t,u)==ref)
