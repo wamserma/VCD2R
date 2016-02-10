@@ -13,8 +13,10 @@ LinkingTo:
     Rcpp
 Imports:
     data.tree,
+    dygraphs,
     hash,
     inline,
+    plotly,
     Rcpp
 URL: https://github.com/wamserma/VCD2R/
 BugReports: https://github.com/wamserma/VCD2R/issues
