@@ -29,7 +29,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   vartree <- vcd$hierarchy
 
   topNode <- NULL
-  if (!is.na(top)) topNode <- Find(vartree$root,top,"level")
+  if (!is.na(top)) topNode <- Find(vartree$root,top,traversal = "level")
   if (is.null(topNode)) topNode <- vartree$root
 
   # 2. make a copy of the tree for working on
