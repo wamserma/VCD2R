@@ -1,0 +1,174 @@
+---
+title: "Power Analysis of Canright's AES-S-Box with VCD2R"
+author: "Markus S. Wamser"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Power Analysis with VCD2R}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+One of the intended usage scenarios for the package VCD2R is learning/teaching side-channel analysis.
+
+In this Vignette we will 
+  0. read a Value Change Dump (VCD) output by a simulator
+  0. select the relvant sub-module for our analysis
+  0. extract the toggle-counts from the VCD file
+  0. plot the toggling activity
+  0. demonstrate a DPA-attack on a single S-Box
+
+## Setup
+
+The VCD file used in this vignette is generated from a VHDL implementation of David Canright's S-Box [@Canright] using a simulator software.
+
+It contains 1024 executions of a simplified last AES (TODO:ref AES) round. Data is combined with a key byte, then the S-Box is applied, then another key addition is done. All intermediate values are stored in registers to make the data a bit more interesting.
+(The input data is a random permutation of all possible input values, each taken 4 times.)
+
+```{r echo=FALSE}
+DiagrammeR::mermaid("
+  graph LR
+    K0>K0]-->xor0
+    data[D]-->xor0((+))
+    xor0-->sbox[S-Box]
+    K1>K1]-->xor1
+    sbox-->xor1((+))
+    xor1-->cy[C]
+")
+
+```
+
+We will use Differential Power Analysis to recover the key used in this last step (`K1`).
+
+
+## read a Value Change Dump (VCD) output by a simulator
+
+Reading a Value Change Dump is very easy, just create a VCDFile object with the path to the dump as an argument. The header of the file will automatically get parsed and a tree representation of the module/signal-hierarchy is generated.
+
+```{r cache.vars=vcd}
+vcd<-VCDFile("vignettes/aes-sbox.vcd")
+vcd
+```
+
+## select the relvant sub-module for our analysis
+
+We can now explore the module tree and select the module that we are interested in. The hierarchy is stored as a [data.tree](https://cran.rstudio.com/web/packages/data.tree/) object, so we can make use of existing plotting capabilities.
+
+```{r}
+print(vcd$hierarchy,pruneMethod="dist",limit=15)
+```
+
+We are interested in the activity of the S-Box. This module is called `SBOX1`.
+
+## extract the toggle-counts from the VCD file
+
+Now that we have identified the module for which we want to read in the toggle counts, we can parse the remainder of the VCD file. Events outside the desired (sub-)hierarchy will be ignored. When we are interested to analyse the toggle-counts of smaller sub-modules, we can also indicate at which depth accumulation shall be done.
+
+For this simple example, we want everything including the testbench, so we set depth to -1 and go with the defaults otherwise.
+
+
+```{r}
+#toggles.SBOX<-parseToggles(vcd,"SBOX1",depth=0) #only the SBOX
+#toggles.all<-parseToggles(vcd) #everything accumulated to a single trace
+toggles<-parseToggles(vcd,depth=-1) # everything
+```
+
+The function will return the hierarchy of modules/signals for which toggle counts have been produced. Note that a signal may be present in multiple modules. In that case it is counted only once.
+
+## plot the toggling activity
+
+We can view the activity using either [plotly](TODO) or [dygraph](TODO). Using the latter we get:
+
+```{r}
+graph<-plotToggles(vcd,toggles,top="SBOX1",type="dygraph")
+toggles$counts<-graph$counts
+```
+
+The plotting function will also compute the counts for intermediate modules as required and return updated counts.
+
+The plot resembles a simulated power trace (according to the only-computation-leaks-model). For getting closer matches to reality, the individual toggling events may get weighted. See `?vcd2r::plotToggles` for more.
+
+To help with visual inspection of the simulated trace, we can overlay markers for certain timestamps (implemented for `dygraph` only). These can either be given though the ellipsis argument (`...`) for `plotToggles` or added directly to the plot using `dygraph` commands.
+
+Here we mark the start/end of each S-Box-invocation. Make things easier, a trigger signal was included in the testbench.
+
+```{r load_magrittr, include=FALSE}
+library(magrittr)
+```
+
+```{r}
+# find the trigger
+trigger<-Find(toggles$hierarchy,"TRIGGER",field = "humanReadableName")
+
+# get the times of triggering
+trigger.times<-names(toggles$counts[[trigger$name]]$`1`)
+
+# add them to the plot
+for (trig in trigger.times) {
+  graph$plot %<>%    # %<>% is from package magrittr
+    dygraphs::dyEvent(trig, label = "trigger", labelLoc = "top")
+}  
+graph$plot
+```
+
+```{r eval=F}
+# find the trigger
+trigger<-Find(toggles$hierarchy,"TRIGGER",field = "humanReadableName")
+
+# get the times of triggering
+trigger.times.on<-names(toggles$counts[[trigger$name]]$`1`)
+trigger.times.off<-names(toggles$counts[[trigger$name]]$`0`)
+
+trigger.times<-list("trigger on"=trigger.times.on,"trigger off"=trigger.times.off)
+
+
+# alternative plotting
+graph<-plotToggles(vcd,toggles,top="SBOX1",type="dygraph",events=trigger.times)
+graph$plot
+```
+
+
+In the same way we could also overlay the clocking events or add the clock as a waveform.
+
+Zooming in on any part of the graph we can easily see that we have only few toggling for the `xor` operations, a lot of toggling for the S-Box evaluation right in the middle of the three clock cycles following a trigger-event.
+
+## demonstrate a DPA-attack on a single S-Box
+
+A *Differential Power Analysis (DPA)* attack consist of three phases: Obtaining power traces (simulated in this example), building a model and comparing estimations from the model with the measurement data. We will use the classic Hamming-weight model and R's `cor()` function to distinguish correct estimations. This is the classic *Correlation Power Analysis (CPA)*.
+
+First we need to extract the relevant values from our power traces.
+
+```{r eval=FALSE}
+# select the toggle statistics at timestamp
+
+```
+
+Then we create the power estimations for each execution based on our key guess.
+
+```{r eval=FALSE}
+# a 256x256 matrix with key-estimations and data-values
+
+```
+
+Now we can obtain correlation values for each guessed key value. For this example we recover the key value `0x2a` which is indeed the value used for producing the VCD file. (This can also be seen from the dumped values in the VCD file.)
+
+Plotting correlation values against number of measurements, we can see that correlation for all wrong guesses decreases quickly. The correct key hypothesis (highlighted) is easy to distinguish.
+
+
+```{r eval=FALSE}
+# create correlation values for 1 to n meaurements
+# plot and highlight correct key hypothesis.
+
+# maybe also use cor.test() to obtain test significance on a second scale
+```
+
+```{r eval=FALSE,echo=FALSE}
+
+K0<-c(1,1,0,1,0,1,0,1)
+K1<-c(0,0,1,0,1,0,1,0)
+
+# ouput<-(S((input + K0)%%2) + K1)%%2 
+
+```
+
+# References
