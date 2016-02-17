@@ -16,6 +16,7 @@ Imports:
     dygraphs,
     hash,
     inline,
+    magrittr,
     plotly,
     Rcpp
 URL: https://github.com/wamserma/VCD2R/
