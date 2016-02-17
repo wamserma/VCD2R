@@ -22,21 +22,26 @@
 # parseToggles(vcd,"top",3)
 # parseToggles(vcd,"SBOX1",3)
 
-parseToggles <- function(vcd,top=NA,depth=0){
+parseToggles <- function(vcd,top=NA,depth=0L){
   # assume we have a sane VCDFile object
 
   # 1. find the desired root signal
   vartree <- vcd$hierarchy
 
+  topNode <- NULL
   if (!is.na(top)) topNode <- Find(vartree$root,top,"level")
   if (is.null(topNode)) topNode <- vartree$root
 
   # 2. make a copy of the tree for working on
-  vartree <- Clone(topNode,attributes = T)
+  vartree <- data.tree::Clone(topNode,attributes = T)
 
   # 3. prepare the list of signals
   rootLevel <- vartree$level # in data.tree this is 1 (but was documented as 0 in v0.2.4)
-  detailLevel <- min(vartree$height,rootLevel + depth)
+  if (depth < 0) {
+    detailLevel <- vartree$height
+  } else {
+    detailLevel <- min(vartree$height,rootLevel + depth)
+  }
   detailSignals <- data.tree::Traverse(vartree, traversal = "level", pruneFun = function(x) {(x$level <= detailLevel)}) # keep all with a lower level
 
   # 4. select all multibit signals and add the artificially generated subsignals for counting
@@ -232,8 +237,12 @@ parseToggles <- function(vcd,top=NA,depth=0){
 
 
   #finally we can prune vartree
-  #vartree$Prune(pruneFun = function(x) {(x$level <= (detailLevel + topNode$level)) || ((x$level == detailLevel + topNode$level + 1) && (x$parent$bits > 1))}) # broken in data.tree 0.2.4
-  vartree <- Clone(topNode,attributes = T,pruneFun = function(x) {(x$level <= (detailLevel + topNode$level)) || ((x$level == detailLevel + topNode$level + 1) && (x$parent$bits > 1))  })
+  if (depth >= 0) {
+   vartree$Prune(pruneFun = function(x) {
+    if (x$level <= detailLevel) return(TRUE)
+    if ((x$level == detailLevel+1) && !is.null(x$parent$bits) && (x$parent$bits > 1)) return(TRUE)
+    return(FALSE)})
+  }
 
   # and unlist the counts
   for (i in names(counts)) {
