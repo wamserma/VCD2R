@@ -73,9 +73,3 @@ accumulate <- function(sig,parseResult) {
   }
   return(parseResult$counts)
 }
-
-# plotting
-
-# if no sums available, call accumuulate
-# use weights to sum and plot
-# nicely with ggplot
