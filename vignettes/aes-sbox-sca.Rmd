@@ -22,8 +22,9 @@ In this Vignette we will
 
 The VCD file used in this vignette is generated from a VHDL implementation of David Canright's S-Box [@Canright] using a simulator software.
 
-It contains 1024 executions of a simplified last AES (TODO:ref AES) round. Data is combined with a key byte, then the S-Box is applied, then another key addition is done. All intermediate values are stored in registers to make the data a bit more interesting.
-(The input data is a random permutation of all possible input values, each taken 4 times.)
+It contains 1024 executions of a simplified last AES (TODO:ref AES) round. Data is combined with a key byte, then the S-Box is applied, then another key addition is done. The S-Box-Output is stored in registers.
+(The input data is a random permutation of all possible input values, repeated multiple times.)
+After each execution, the circuit is reset.
 
 ```{r echo=FALSE}
 DiagrammeR::mermaid("
@@ -38,15 +39,27 @@ DiagrammeR::mermaid("
 
 ```
 
-We will use Differential Power Analysis to recover the key used in this last step (`K1`).
+We will use Differential Power Analysis to recover the first key used (`K0`). This is what one would do to attack the first round S-Boxes in AES. This also requires knowledge of the input values `D`. In a symmetric scenario one can attack the other key with knowledge of the output values `C`.
 
 
 ## read a Value Change Dump (VCD) output by a simulator
 
 Reading a Value Change Dump is very easy, just create a VCDFile object with the path to the dump as an argument. The header of the file will automatically get parsed and a tree representation of the module/signal-hierarchy is generated.
 
-```{r cache.vars=vcd}
-vcd<-VCDFile("vignettes/aes-sbox.vcd")
+```{r eval=FALSE}
+vcd<-VCDFile("aes-sbox.vcd")
+```
+```{r eval=FALSE,echo=FALSE}
+save(vcd,file="aes-sbox-sca-vcd.RData.xz",compress="xz")
+```
+```{r echo=FALSE}
+load("aes-sbox-sca-vcd.RData.xz")
+```
+
+
+The default print function gives a quick summary.
+
+```{r}
 vcd
 ```
 
@@ -67,10 +80,18 @@ Now that we have identified the module for which we want to read in the toggle c
 For this simple example, we want everything including the testbench, so we set depth to -1 and go with the defaults otherwise.
 
 
-```{r}
+```{r eval=FALSE}
 #toggles.SBOX<-parseToggles(vcd,"SBOX1",depth=0) #only the SBOX
 #toggles.all<-parseToggles(vcd) #everything accumulated to a single trace
-toggles<-parseToggles(vcd,depth=-1) # everything
+toggles<-parseToggles(vcd,depth=-1) # everything in detail
+```
+```{r echo=F,eval=F}
+caccumulate<-compiler::cmpfun(accumulate)
+toggles$counts<-caccumulate("SBOX1",toggles)
+save(toggles,file="aes-sbox-sca-toggles-accumulated.RData.xz",compress = "xz")
+```
+```{r echo=F}
+load("aes-sbox-sca-toggles-accumulated.RData.xz")
 ```
 
 The function will return the hierarchy of modules/signals for which toggle counts have been produced. Note that a signal may be present in multiple modules. In that case it is counted only once.
@@ -79,9 +100,14 @@ The function will return the hierarchy of modules/signals for which toggle count
 
 We can view the activity using either [plotly](TODO) or [dygraph](TODO). Using the latter we get:
 
+We accumulate the required toggle counts in a first step.
+```{r eval=FALSE}
+toggles$counts<-accumulate("SBOX1",toggles)
+```
+
 ```{r}
 graph<-plotToggles(vcd,toggles,top="SBOX1",type="dygraph")
-toggles$counts<-graph$counts
+#toggles$counts<-graph$counts
 ```
 
 The plotting function will also compute the counts for intermediate modules as required and return updated counts.
@@ -90,7 +116,7 @@ The plot resembles a simulated power trace (according to the only-computation-le
 
 To help with visual inspection of the simulated trace, we can overlay markers for certain timestamps (implemented for `dygraph` only). These can either be given though the ellipsis argument (`...`) for `plotToggles` or added directly to the plot using `dygraph` commands.
 
-Here we mark the start/end of each S-Box-invocation. Make things easier, a trigger signal was included in the testbench.
+Here we mark the start/end of each S-Box-invocation. To make things easier, a trigger signal was included in the testbench. TODO: Trigger is RST. Usually the attacked device will be reset before it is fed a new value. So the Reset-Signal can be used as a trigger. Re-alignment of traces is not an issue with simulated traces.
 
 ```{r load_magrittr, include=FALSE}
 library(magrittr)
@@ -98,7 +124,7 @@ library(magrittr)
 
 ```{r}
 # find the trigger
-trigger<-Find(toggles$hierarchy,"TRIGGER",field = "humanReadableName")
+trigger<-Find(toggles$hierarchy,"RST",field = "humanReadableName")
 
 # get the times of triggering
 trigger.times<-names(toggles$counts[[trigger$name]]$`1`)
@@ -111,64 +137,314 @@ for (trig in trigger.times) {
 graph$plot
 ```
 
+Of course we could also have handed the events to the plotting function directly.
+
 ```{r eval=F}
 # find the trigger
-trigger<-Find(toggles$hierarchy,"TRIGGER",field = "humanReadableName")
+trigger<-Find(toggles$hierarchy,"RST",field = "humanReadableName")
 
 # get the times of triggering
 trigger.times.on<-names(toggles$counts[[trigger$name]]$`1`)
 trigger.times.off<-names(toggles$counts[[trigger$name]]$`0`)
 
-trigger.times<-list("trigger on"=trigger.times.on,"trigger off"=trigger.times.off)
+trigger.times.l<-list("trigger on"=trigger.times.on,"trigger off"=trigger.times.off)
 
 
 # alternative plotting
-graph<-plotToggles(vcd,toggles,top="SBOX1",type="dygraph",events=trigger.times)
+graph<-plotToggles(vcd,toggles,top="SBOX1",type="dygraph",events=trigger.times.l)
 graph$plot
 ```
 
-
-In the same way we could also overlay the clocking events or add the clock as a waveform.
+In any case, we could also overlay the clocking events or add the clock as a waveform in pretty much the same way.
 
 Zooming in on any part of the graph we can easily see that we have only few toggling for the `xor` operations, a lot of toggling for the S-Box evaluation right in the middle of the three clock cycles following a trigger-event.
 
-## demonstrate a DPA-attack on a single S-Box
+## a DPA-attack on a single S-Box
 
 A *Differential Power Analysis (DPA)* attack consist of three phases: Obtaining power traces (simulated in this example), building a model and comparing estimations from the model with the measurement data. We will use the classic Hamming-weight model and R's `cor()` function to distinguish correct estimations. This is the classic *Correlation Power Analysis (CPA)*.
 
 First we need to extract the relevant values from our power traces.
+The SBOX-switching happens 50000 ps after the trigger. 
 
-```{r eval=FALSE}
-# select the toggle statistics at timestamp
+```{r echo=FALSE}
+addStringNums<-function(a,b){
+  a<-as.integer(strRevAndSplit(a))
+  b<-as.integer(strRevAndSplit(b))
+  #padding
+  n<-max(length(a),length(b))
+  a<-c(a,rep(0L,n-length(a)))
+  b<-c(b,rep(0L,n-length(b)))
+  z<-c(a+b,0)
+  # carry propagation
+  for (i in 1:(length(z)-1)) {
+    z[i+1] <-z[i+1]+(z[i]%/%10)
+    z[i] <- z[i]%%10
+  }
+  if (z[[length(z)]]==0) z<-z[-length(z)]
+  # convert back to string
+  z<-paste0(rev(z),collapse="")
+  return(z)
+}
+```
+
+TODO: partition traces, we do not attack the actual SBOX, but the register after it!
+
+```{r results='hide'}
+sbox.times<-sapply(trigger.times,addStringNums,b="50000")
+sbox.1<-toggles$counts$SBOX1$`1`[sbox.times]
+sbox.0<-toggles$counts$SBOX1$`0`[sbox.times]
+```
+
+Note that extracting the timestamps from `toggles$counts$SBOX1` instead of relying on a trigger returns too much events, as there is always a bit of action when the clock toggles, due to the included flip-flops.
+
+The extracted traces look like this:
+```{r echo=c(3)}
+sbox.1<-noNA(sbox.1)
+sbox.0<-noNA(sbox.0)
+p<-plotToggles.dygraph(sbox.times,list("1"=sbox.1,"0"=-sbox.0),timescale = c("scale"="1","unit"="picosecond"))
+p
+```
+
+```{r echo=FALSE}
+load("canright-inputs.Rdata.xz")
+d.hex<-sapply(d,sprintf,fmt="%02x")
+```
+
+```{r}
+# d is loaded from file
+str(d)
+```
+
+
+Let's quickly annotate the plot with our input values:
+
+```{r}
+for (i in 1:length(sbox.times)){
+  p %<>% dygraphs::dyAnnotation(sbox.times[[i]],text=d.hex[[i]])
+}
+p
+```
+
+This clearly shows that at a few instances (at `paste0(names(which(sbox.1 <= 25)),collapse=",")` ps) the input was repeated and therefore (almost) no data-dependent toggling occured.
+
+At a first glance also the last part of the graphs looks a bit distinct. These counts were indeed generated in a slightly different way. The inputs were sweeped from 0 to 255 and back to zero, with a constant value (0) in between any two consecutive values of the sweep. Selecting the inputs instead of just randomly generating inputs is a common way to increase signal-to-noise ratio for this kind of attacks, especially when assumptions on the actual layout of the circuit can be made.
+
+Then we create the power estimations for each execution based on our key guess. We assume that the sequence of values is random and therefore the influences are taken as noise.
+
+The idea is now thus: For each possible input and each possible key-guess we compute the expected S-Box output. Then we apply different models and methods to distinguish between a correct key guess and other key guesses. 
+
+
+But first things first, we need a function that computes the estimates.
+
+```{r echo=-1}
+sboxLUT<-c(99,124,119,123,242,107,111,197,48,1,103,43,254,215,171,118,202,130,201,125,250,89,71,240,173,212,162,175,156,164,114,192,183,253,147,38,54,63,247,204,52,165,229,241,113,216,49,21,4,199,35,195,24,150,5,154,7,18,128,226,235,39,178,117,9,131,44,26,27,110,90,160,82,59,214,179,41,227,47,132,83,209,0,237,32,252,177,91,106,203,190,57,74,76,88,207,208,239,170,251,67,77,51,133,69,249,2,127,80,60,159,168,81,163,64,143,146,157,56,245,188,182,218,33,16,255,243,210,205,12,19,236,95,151,68,23,196,167,126,61,100,93,25,115,96,129,79,220,34,42,144,136,70,238,184,20,222,94,11,219,224,50,58,10,73,6,36,92,194,211,172,98,145,149,228,121,231,200,55,109,141,213,78,169,108,86,244,234,101,122,174,8,186,120,37,46,28,166,180,198,232,221,116,31,75,189,139,138,112,62,181,102,72,3,246,14,97,53,87,185,134,193,29,158,225,248,152,17,105,217,142,148,155,30,135,233,206,85,40,223,140,161,137,13,191,230,66,104,65,153,45,15,176,84,187,22)
+
+hammingLUT<-c(0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4)
+
+gencyph<-function(d,k){
+  s.in<-xor.hexmode(as.hexmode(d),as.hexmode(k))
+  s.out<-sboxLUT[s.in+1]
+  return(s.out)  
+}
+
+
+hw<-function(d){
+  hammingLUT[d%%16+1]+hammingLUT[d%/%16+1]
+}
 
 ```
 
-Then we create the power estimations for each execution based on our key guess.
+In any case we need to compute (hypothetical) intermediate values (the S-Box-Outputs).
 
-```{r eval=FALSE}
-# a 256x256 matrix with key-estimations and data-values
+```{r}
+cyph <- outer(d,0:255,gencyph)
+colnames(cyph)<-0:255
+```
+
+
+### Single-Bit-DPA
+
+The idea of this first attack is quite simple: We select a bit position in the output of the S-Box, then we guess a key. We compute the output and partition the inputs according to value of the selected bit. We then apply this partition to the observed traces. If our key guess and therefore the partitioning was correct, we will have a significant difference in the per-partition averages. If the key guess was wrong we have a random partition and the averages will not differ a lot.
+
+For a proper Single-Bit-DPA on traces from real measurements, the exact moment for maximum leakage may not be known. This is especially the case for software-implementations, where an S-Box-evaluation may take multiple cycles. In that case the maximum difference of the averaged traces is taken.
+
+In the special case of this toggle-count example, we know the exact moment of the desired leakage. It is *not* the activity generated by the S-Box, but rather the value written to the register at the end of this process. With clock-level granularity in our VCD-file, we cannot see this properly. But together with the addition of a fixed value afterwards, can take the values 100000&thinsp;ps to run our attack.
+
+```{r results='hide'}
+sbox.times<-sapply(trigger.times,addStringNums,b="100000")
+sbox.1<-toggles$counts$SBOX1$`1`[sbox.times]
+sbox.0<-toggles$counts$SBOX1$`0`[sbox.times]
+```
+
+```{r}
+attackBit <- function(bit,Trace){
+	ret <- c()
+	for (i in 1:256) { # for each possible key
+		    # get a list of the cyphertexts and test wether bit is set
+        C<-isBit(bit,cyph[,i])
+        
+        #group by selected bit of cypher
+        T.h <- Trace[C]
+        T.l <- Trace[!C]
+
+        #generate mean traces per group
+        T.hm <- mean(T.h)
+        T.lm <- mean(T.l)
+
+        ret<-c(ret,max(abs(T.hm-T.lm)))
+		}
+		ret
+}
+
+# test whether a certain bit is set in the binary representation of x
+isBit <- function(bit, x) {
+	((x %% (2^(bit+1)))%/%(2^bit))!=0
+}
 
 ```
 
-Now we can obtain correlation values for each guessed key value. For this example we recover the key value `0x2a` which is indeed the value used for producing the VCD file. (This can also be seen from the dumped values in the VCD file.)
+Let's run the attack: Compute a matrix that give the maximum difference for each bit and each key guess. We also plot the results.
 
-Plotting correlation values against number of measurements, we can see that correlation for all wrong guesses decreases quickly. The correct key hypothesis (highlighted) is easy to distinguish.
+(We also simplified the attack a bit: normally one would use the full traces from one trigger event to the next and use the maximum distance along these traces. But as we know where the leakage occurs, we could already single out the relevant values, reducing computation time significantly.)
 
 
-```{r eval=FALSE}
-# create correlation values for 1 to n meaurements
-# plot and highlight correct key hypothesis.
-
-# maybe also use cor.test() to obtain test significance on a second scale
+```{r}
+sbox.diff<-sbox.1-sbox.0
+maxdiffs<-sapply(0:7,attackBit,Trace=sbox.diff)
 ```
+```{r fig.asp=2}
+split.screen(c(4, 2))       # split display into 4x2 row x col
+for (i in 0:7){
+  screen(i+1)
+  plot(0:255,maxdiffs[,(i+1)],type="l",main=paste0("Differences for bit ",i,collapse=""),xlab="Key",ylab="Difference")
+}
+close.screen(all = TRUE)    # exit split-screen mode
+```
+
+We have a clear spike (up- or downward) in the right quarter of each plot.
+
+Normalising the y-axis on the mean values, we get a clear result.
+
+```{r}
+apply(maxdiffs,2,function(x) which.max(abs(x-mean(x))))
+```
+
+This is a clear vote for the key value `r (0:255)[214]`. (Remember: R indexes vectors from 1.)
+
+### Multi-Bit-CPA
+
+Another way to recover the key is to make hypotheses on the power consumption and correlate these with the actual power consumption (given by toggle count).
+The assumption is that a correct key guess will lead to high correlation, whereas a wrong key guess will lead to something 'random' and therefore with low correlation to the measurements.
+
+Correlation Power Attacks (CPA) have the advantage of being much more computationally efficient, when the moment of leakage is known.
+
+The simplest assumption is that higher values have higher power consumption.
+
+```{r}
+cors<-sapply(1:256,function(i) cor(cyph[,i],sbox.diff))
+
+maxcor<-which.max(abs(cors))
+maxcor
+cors[maxcor]
+```
+
+
+So again, the guessed key is `r maxcor-1` with a correlation value of `r cors[maxcor]`
+
+Finally we can compute and plot the evolution of the correlation.
+
+```{r}
+cors<-outer(1:1000,1:256,Vectorize(function(samples,key) {
+  abs(cor(cyph[1:samples,key],sbox.diff[1:samples]))
+}))
+```
+
+```{r}
+plot(1:1000,cors[,1],type="l",col="gray",xlab="# of traces", ylab= "correlation")  
+for (i in 2:256) lines(1:1000,cors[,i],col="gray") # all keys
+lines(1:1000,cors[,214],col="blue") # guessed key, "pearson"
+```
+
+This shows that after 100 traces the result is already pretty clear.
+
+To demonstrate the power we gain with using R, we can also show the development of the correlation using different methods.
+
+```{r}
+cors2<-outer(1:1000,c("kendall","spearman"),Vectorize(function(samples,meth) {
+  abs(cor(cyph[1:samples,214],sbox.diff[1:samples],method=meth))
+}))
+lines(1:1000,cors2[,1],col="red") # guessed key, "kendall"
+lines(1:1000,cors2[,2],col="green") # guessed key, "spearman""
+```
+
+
+### Hamming-Weight-CPA
+
+Another leakage model is that power consumption is correlated with the hamming weight, the number of bits with value 1, of the output.
+
+We can easily transform the estimates:
+
+```{r}
+estimates<-hw(cyph)
+dim(estimates)<-dim(cyph)
+```
+
+The remainder of the attack proceeds as above.
+
+```{r}
+cors<-sapply(1:256,function(i) cor(estimates[,i],sbox.diff))
+
+maxcor<-which.max(abs(cors))
+maxcor
+cors[maxcor]
+```
+
+
+So again, the guessed key is `r maxcor-1` with a correlation value of `r cors[maxcor]`
+
+Finally we can compute and plot the evolution of the correlation.
+
+```{r}
+cors<-outer(1:1000,1:256,Vectorize(function(samples,key) {
+  abs(cor(estimates[1:samples,key],sbox.diff[1:samples]))
+}))
+```
+
+```{r}
+plot(1:1000,cors[,1],type="l",col="gray",xlab="# of traces", ylab= "correlation")  
+for (i in 2:256) lines(1:1000,cors[,i],col="gray") # all keys
+lines(1:1000,cors[,214],col="blue") # guessed key, "pearson"
+```
+
+This shows that this leakage model fits perfectly for the observed circuit and only a few traces are needed to recover the key value.
+
+The same holds for the other methods of computing the correlation.
+```{r, warning=FALSE}
+cors2<-outer(1:1000,c("kendall","spearman"),Vectorize(function(samples,meth) {
+  abs(cor(estimates[1:samples,214],sbox.diff[1:samples],method=meth))
+}))
+lines(1:1000,cors2[,1],col="red") # guessed key, "kendall"
+lines(1:1000,cors2[,2],col="green") # guessed key, "spearman""
+```
+
 
 ```{r eval=FALSE,echo=FALSE}
 
-K0<-c(1,1,0,1,0,1,0,1)
-K1<-c(0,0,1,0,1,0,1,0)
+K0<-c(1,1,0,1,0,1,0,1) #213
+K1<-c(0,0,1,0,1,0,1,0) #42
 
 # ouput<-(S((input + K0)%%2) + K1)%%2 
 
 ```
 
-# References
+### MIA-based SCA
+
+
+
+## Outlook
+
+With the mighty statistical toolset of R at our hands, we can try many more attacks. We applied Correlation and Mutual Information Analysis, we could try Regression Models, Clustering, Classify parts of traces with Random Forests, or even use combinations of those!
+
+MIA: kris.kalish.net/2013/11/mutual-information-in-r/, packages entropy and infotheo
+
+## References
