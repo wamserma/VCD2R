@@ -117,7 +117,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
     vcd$filename, "r", blocking = TRUE,
     encoding = getOption("encoding"), raw = FALSE
   )
-  on.exit(close(con))
+  on.exit(close(con),add=T)
 
   # we assume dumpstart was set sensible and scan to the next timestamp
   readLines(con, n = (vcd$dumpstart-2)) #skip
@@ -212,21 +212,25 @@ parseToggles <- function(vcd,top=NA,depth=0L){
         bits.val     <- strRevAndSplit(val)
 
         whichToggled <- which(!bits.lastval == bits.val)
-        bitsig <- sapply(whichToggled, function(i) paste0(c(sig,".",as.character(i - 1)),collapse = ""))
-        buckets <- sapply(bitsig, function(x) nameBucketIdxLUT[[x]])
-        for (j in 1:length(whichToggled)) {
-          i <- whichToggled[j]
-          bucket <- buckets[j]
-          indicatorIdx <- scalarIndicatorToInt(bits.val[i])
-          tval <- counts[[bucket]][[indicatorIdx]]$time$val
-          if ((!is.null(tval)) && (tval != timestamp)) {
-            counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time,val=timestamp)
-            counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count,val=1L)
-          } else {
-            counts[[bucket]][[indicatorIdx]]$count$val <- counts[[bucket]][[indicatorIdx]]$count$val + 1L
+        if (length(whichToggled>0)) {
+          # when a circuit comes up, toggling events from xxxxxxxx to xxxxxxxx may come up
+          bitsig <- sapply(whichToggled, function(i) paste0(c(sig,".",as.character(i - 1)),collapse = ""))
+          buckets <- sapply(bitsig, function(x) nameBucketIdxLUT[[x]])
+          for (j in 1:length(whichToggled)) {
+            i <- whichToggled[j]
+
+            bucket <- buckets[j]
+            indicatorIdx <- scalarIndicatorToInt(bits.val[i])
+            tval <- counts[[bucket]][[indicatorIdx]]$time$val
+
+            if ((!is.null(tval)) && (tval != timestamp)) {
+              counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time,val=timestamp)
+              counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count,val=1L)
+            } else {
+              counts[[bucket]][[indicatorIdx]]$count$val <- counts[[bucket]][[indicatorIdx]]$count$val + 1L
+            }
           }
         }
-
         multibitvals[[sig]] <- val
       }
     }
