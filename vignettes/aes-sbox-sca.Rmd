@@ -439,12 +439,127 @@ K1<-c(0,0,1,0,1,0,1,0) #42
 
 ### MIA-based SCA
 
+A side-channel attack using mutual information analysis is conceptually equivalent to a correlation based one. The main difference is that instead of a correlation between estimated and measured values, the mutual information is considered as a distinguisher for the correct key guess. In most cases CPA will be more efficient (less traces needed), but it captures only first order relations. MIA, however, will also capture higher order relations and therefore might enable key recovery where CPA fails.
 
+```{r}
+require(entropy)
+mis<-sapply(1:256,function(i) mi.empirical(discretize2d(estimates[,i],sbox.diff,numBins1 = 8,numBins2 = 8)))
+
+maxmi<-which.max(abs(mis))
+maxmi
+mis[maxmi]
+```
+
+Compare the absolue values:
+
+```{r echo=F}
+cors<-sapply(1:256,function(i) cor(estimates[,i],sbox.diff))
+
+plot(0:255,abs(cors),type="h",col="gray",xlab="key guess", ylab= "correlation/mutual information")  
+lines(0:255,mis,col="black",type="h") # MIA
+```
+
+Note that (absolute) correlation has a more significant peak at key value 214, while MIA has a very close second candidate at 126.
+
+The evolution of the mutual information is similar to the correlation value. Note the sharp drop after the first 256 traces, which is due to the fact that after going through all values once, a (uniformly) pseudorandom sequence follows.
+
+```{r echo=F}
+mievol<-outer(8:1000,1:256,Vectorize(function(samples,key) {
+  mi.empirical(discretize2d(estimates[1:samples,key],sbox.diff[1:samples],numBins1 = 8,numBins2 = 8))
+}))
+plot(8:1000,mievol[,1],type="l",col="gray",xlab="# of traces", ylab= "mutual information",ylim=c(0,max(mievol)))  
+for (i in 2:256) lines(8:1000,mievol[,i],col="gray") # all keys
+lines(8:1000,mievol[,214],col="blue") # guessed key"
+```
+
+For more traces the mutual information value drops again, due to the way the inputs were generated. This becomes even more clear, as the value goes up again in the end.
+
+```{r echo=F}
+trs<-seq(8,length(sbox.diff),by=32)
+mievol<-outer(trs,1:256,Vectorize(function(samples,key) {
+  mi.empirical(discretize2d(estimates[1:samples,key],sbox.diff[1:samples],numBins1 = 8,numBins2 = 8))
+}))
+plot(trs,mievol[,1],type="l",col="gray",xlab="# of traces", ylab= "mutual information",ylim=c(0,max(mievol)))  
+for (i in 2:256) lines(trs,mievol[,i],col="gray") # all keys
+lines(trs,mievol[,214],col="blue") # guessed key"
+```
+
+We get the same picture when we compute the mutual information of the actual measurement series and the estimates.
+
+```{r}
+require(infotheo)
+mis<-sapply(1:256,function(i) mutinformation(estimates[,i],sbox.diff))
+
+maxmi<-which.max(abs(mis))
+maxmi
+mis[maxmi]
+
+plot(0:255,mis,type="h",col="gray",xlab="key guess", ylab= "mutual information")
+lines(213,mis[214],type="h",col="blue")  
+```
+
+This shows that the efficiency of MI as a distinguisher depends on the way the traces are generated. Nevertheless, the correct key guess alway delivers the highest MI value.
+
+```{r echo=F}
+trs<-seq(8,length(sbox.diff),by=32)
+mievol<-outer(trs,1:256,Vectorize(function(samples,key) {
+  mutinformation(estimates[1:samples,key],sbox.diff[1:samples])
+}))
+plot(trs,mievol[,1],type="l",col="gray",xlab="# of traces", ylab= "mutual information",ylim=c(0,max(mievol)))  
+for (i in 2:256) lines(trs,mievol[,i],col="gray") # all keys
+lines(trs,mievol[,214],col="blue") # guessed key"
+```
+
+```{r eval=FALSE,echo=FALSE}
+mis<-sapply(1:256,function(i) multiinformation(cbind.data.frame(estimates[,i],sbox.diff)))
+
+maxmi<-which.max(abs(mis))
+maxmi
+mis[maxmi]
+
+plot(0:255,mis,type="h",col="gray",xlab="key guess", ylab= "multiinformation")
+lines(213,mis[214],type="h",col="blue")  
+```
+
+```{r eval=FALSE,echo=FALSE}
+mis<-sapply(1:256,function(i) interinformation(cbind.data.frame(estimates[,i],sbox.diff)))
+
+maxmi<-which.max(abs(mis))
+maxmi
+mis[maxmi]
+
+plot(0:255,mis,type="h",col="gray",xlab="key guess", ylab= "interinformation")
+lines(213,mis[214],type="h",col="blue")  
+```
+
+To demonstrate the power of MI we take the leakage during computation of the S-Box. The correct key is also recovered in this case, a slightly modified leakage function: The affine part (xor of 0x63) of the SBox is xor'd to the key.
+(This is captured below by reordering the estimates acordingly.)
+
+```{r results='hide'}
+sbox.times<-sapply(trigger.times,addStringNums,b="50000")
+sbox.1<-toggles$counts$SBOX1$`1`[sbox.times]
+sbox.0<-toggles$counts$SBOX1$`0`[sbox.times]
+sbox.diff<-sbox.1-sbox.0
+
+keytrans<-function(k) {(xor.hexmode((k-1),99)+1)}
+cy2<-cyph[,sapply(1:256,keytrans)]
+estimates<-(hw(cy2%/%16)*hw(cy2%%16))
+dim(estimates)<-dim(cy2)
+
+mis<-sapply(1:256,function(i) mutinformation(estimates[,i][1:255],sbox.diff[1:255]))
+
+maxmi<-which.max((mis))
+print(maxmi)
+mis[maxmi]
+
+
+plot(0:255,mis,type="h",col="gray",xlab="key guess", ylab= "mutual information")
+lines(213,mis[214],type="h",col="blue")  
+
+```
 
 ## Outlook
 
-With the mighty statistical toolset of R at our hands, we can try many more attacks. We applied Correlation and Mutual Information Analysis, we could try Regression Models, Clustering, Classify parts of traces with Random Forests, or even use combinations of those!
-
-MIA: kris.kalish.net/2013/11/mutual-information-in-r/, packages entropy and infotheo
+With the mighty statistical toolset of R at our hands, we can try many more attacks. We applied Correlation and Mutual Information Analysis, we could try Regression Models, Clustering, Random Forests (e.g. for traces that leak at multiple time instances), or even use combinations of those!
 
 ## References
