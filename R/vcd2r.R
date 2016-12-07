@@ -6,7 +6,7 @@
 #'
 #' TODO: Package doc.
 #'
-#' @section Blurb, section
+#' @section Foo: Blurb, section
 #'
 #' @docType package
 #' @name VCD2R
@@ -19,9 +19,9 @@ NULL
 #' @param parseHeader A flag whether the header should be parsed on opening the file. Default is TRUE.
 #' @return An VCDFileObject containing information on \code{file}.
 #' @examples
-#' VCDFile()
-#' VCDFile("inter.vcd")
-#' VCDFile("inter.vcd",F)
+#' #VCDFile()
+#' #VCDFile("inter.vcd")
+#' #VCDFile("inter.vcd",F)
 
 VCDFile <- function(filename = NA_character_,parseHeader = T)
 {

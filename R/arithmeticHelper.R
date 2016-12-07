@@ -1,60 +1,33 @@
-## string helpers, using Rcpp and inline
+## string helpers
 
-#' @importFrom Rcpp sourceCpp
-#' @importFrom inline cxxfunction
-
-strHead <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
-    std::string s = as<std::string>(x);
-    return wrap(s[0]);
-    ')
-
-strHeadLower <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
-    std::string s = as<std::string>(x);
-    register char c = tolower(s[0]);
-    return wrap(c);
-    ')
-
-strTail <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
-    std::string s = as<std::string>(x);
-    s = &(s[1]);
-    return wrap(s);
-    ')
-
-strRevAndSplit <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
-    std::string s = as<std::string>(x);
-    size_t n = s.length();
-    CharacterVector out(n);
-    char t[2] = {0x0,0x0};
-    for (unsigned int i=0; i < n; i++) {
-      t[0] = s[i];
-      out[n-i-1] = t;
-    }
-    return (out);
-    ')
-
-
+strHead <- function(x) {substr(x,1,1)}
+strHeadLower <- function(x) {tolower(substr(x,1,1))}
+strTail <- function(x) {substring(x,2)}
+strRevAndSplit<-function(x) {rev(strsplit(x,"")[[1]])}
 
 # map ("0","1","z","x",other) -> (1,2,3,4,0)
-scalarIndicatorToInt <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
-    char c = (as<std::string>(x))[0];
-    unsigned int ret;
-      if (c == \'0\') {ret = 1;}
-      else if (c == \'1\') {ret = 2;}
-      else if (c == \'z\') {ret = 3;}
-      else if (c == \'x\') {ret = 4;}
-      else {ret = 0;}
-    return wrap(ret);
-    ')
+scalarIndicatorToInt <- function(x) {
+    x<-strsplit(x,"")[[1]][1]
+	ret <- 0
+	if (x == '0') {ret <- 1;}
+      else if (x == '1') {ret <- 2;}
+      else if (x == 'z') {ret <- 3;}
+      else if (x == 'x') {ret <- 4;}
+      else {ret <- 0;}
+	return(ret)
+  }
+#scalarIndicatorToInt("zoo")==3
 
-# map ("b","r"other) -> (1,2,0)
-isMultiBit <- cxxfunction(signature(x="character"), plugin="Rcpp", body='
-                                    char c = (as<std::string>(x))[0];
-                                    unsigned int ret;
-                                    if (c == \'b\') {ret = 1;}
-                                    else if (c == \'r\') {ret = 2;}
-                                    else {ret = 0;}
-                                    return wrap(ret);
-                                    ')
+# map ("b","r",other) -> (1,2,0)
+isMultiBit <- function(x) {
+    x<-strsplit(x,"")[[1]][1]
+	ret <- 0
+	if (x == 'b') {ret <- 1;}
+      else if (x == 'r') {ret <- 2;}
+      else {ret <- 0;}
+	return(ret)
+  }
+
 # Note: we are assuming less that 2147483647 toggles per (accumulated) signal per timestamp,
 # which is safe for all design sizes we might want to handle here
 

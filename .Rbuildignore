@@ -4,3 +4,9 @@
 ^\.git$
 ^README\.md$
 ^R/installBuilddeps\.R$
+^R/installBuilddeps\.R$
+^codecov\.yml$
+^appveyor\.yml$
+^\.travis\.yml$
+^.lintr$
+cran-comments.md

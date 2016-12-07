@@ -2,7 +2,7 @@
 # patching corner
 # =======
 
-# data.tree does not provide a find function
+# data.tree does not provide a find function as flexible as this one
 
 Find <- function(node, value, field="name", traversal = c("pre-order", "post-order", "in-order", "level",
                                      "ancestor"), all = F){

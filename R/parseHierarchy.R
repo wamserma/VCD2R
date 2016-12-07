@@ -10,18 +10,14 @@
 #' This function parses the module/variable hierarchy from the VCDFile into a
 #' \code{data.tree} structure.
 #'
-#' @param vcd the VCDFile to parse from
-#' @param buf a buffer to use when reading from that file
-#' @param bufPos current reading position in the buffer
-#' @param con a ext connection to the VCDFile opened for reading, used to refill the buffer
+#' @param tok a \link{Tokenizer} set up to read from the VCDFile
 #'
 #' @return returns the parsed hierarchy
 
-parseHierarchy <- function(buf,bufPos,con,vcdfile) {
+parseHierarchy <- function(tok) {
   # create an empty tree and hand off to the module parser
   node <- data.tree::Node$new()
-  ret <- parseModule(node,buf,bufPos,con,vcdfile)
-
+  ret <- parseScope(node,tok)
   ret$data <- node
   return(ret)
 }
@@ -29,89 +25,57 @@ parseHierarchy <- function(buf,bufPos,con,vcdfile) {
 
 #' Parse a scope statement from a VCD File
 #'
-#' This function parses a single scopefrom the VCDFile into a
+#' This function parses a single scope from the VCDFile into a
 #' \code{data.tree} (subtree-)structure.
 #'
-#' @param vcd the VCDFile to parse from
-#' @param buf a buffer to use when reading from that file
-#' @param bufPos current reading position in the buffer
-#' @param con a ext connection to the VCDFile opened for reading, used to refill the buffer
-#' @param the hierarchy where nodes leaves shall be appenden (really needed?)
+#' @param node the hierarchy where nodes leaves shall be appended
+#' @param tok a \link{Tokenizer} set up to read from the VCDFile
 #'
 #' @return returns the parsed hierarchy
 
-parseModule <- function(node,buf,i,con,vcdfile) {
+parseScope <- function(node,tok) {
   # this function is entered only when a new scope is hit
-  ret <- parseStringFields(buf,i,key,con,vcdfile,field = "scope")
-  data <- strsplit(ret$data," ")[[1]]
-  i <- ret$bufPos
-  buf <- ret$buf
+  data <- parseStringFields(tok)
 
   # we create a non-leaf node, if data is of proper type
   if (!any(data[1] == c("begin","fork","function","module","task"))) {
-    warning("Invalid scope type found: ",data[1]) # TODO: if we could obtain the absolute line number in the input file here, the warning wold be more helpful
-  } else {
+    warning("Invalid scope type found: ",data[1])
     node$type <- data[1]
     node$name <- data[2]
 
     # ----
     # now we are inside a scope
     # we gather all keywords until we hit an upscope
+    # this is the recursive part of the parsing
     # ----
 
-    while (i <= length(buf$data))
+    buf <- tok$nextToken()
+    while (!is.na(buf))
     {
       # fail fast
-      if (substr(buf$data[i],1,1) != '$') {
+      if (substr(buf,1,1) != '$') {
         isEmptyLine <- !grepl("[^[:space:]]+",buf$data[i])
         if (!isEmptyLine) {
-          warning("Invalid statement in scope definition: ",buf$data[i])
+          warning("Invalid statement in scope definition: ",buf)
         }
-        i <- i + 1
-        # refresh the buffer if needed
-        if (i > length(buf$data)) {
-          if (buf$eof) {
-            warning("Premature EOF while scanning ",field,".")
-          } else {
-            buf <- nextLines(con)
-            i <- 0
-            ret$chunksParsed <- ret$chunksParsed + 1
-          }
-        }
-      } else {
-        key <- strsplit(buf$data[i],' ')[[1]][1]
+        buf <- tok$nextToken()
+       } else {
+        key <- buf
 
         if (!any(c("$var","$scope","$upscope","$comment") == key)) {
           warning("Invalid keyword in scope definition: ",key)
-          i <- i + 1
-          # refresh the buffer if needed
-          if (i > length(buf$data)) {
-            if (buf$eof) {
-              warning("Premature EOF while scanning ",field,".")
-            } else {
-              buf <- nextLines(con)
-              i <- 0
-              ret$chunksParsed <- ret$chunksParsed + 1
-            }
-          }
+          buf <- tok$nextToken()
         } else {
           if (key == "$comment") {
             # comments are currently ignored
             # alternate options would be collecting them into a separate variable
             # or generating warnings
             ret <-
-              parseStringFields(buf,i,key,con,vcdfile,"comment")
-            i <- ret$bufPos
-            buf <- ret$buf
-
-          }
+              parseStringFields(tok)
+           }
 
           if (key == "$var") {
-            ret <- parseStringFields(buf,i,key,con,vcdfile,"var")
-            i <- ret$bufPos
-            buf <- ret$buf
-            data <- strsplit(ret$data,"[[:blank:]]+")[[1]]
-
+            data <- parseStringFields(tok)
             if (!any(
               data[1] == c(
                 "event","integer","parameter","real","reg","supply0","supply1","time","tri","triand","trior","trireg","tri0","tri1","wand","wire","wor"
@@ -119,12 +83,12 @@ parseModule <- function(node,buf,i,con,vcdfile) {
             )) {
               warning("Invalid var type: ",data[1])
             } else {
-              if (data[2] == 1) {
+              if (data[2] == 1) { # single bit
               child <- node$AddChild(data[3])
               child$type <- data[1]
               child$bits <- data[2]
               child$humanReadableName <- data[4]
-              } else {
+              } else { # multi bit, gets appropriate number of children
                 child <- node$AddChild(data[3])
                 child$type <- data[1]
                 child$bits <- data[2]
@@ -137,30 +101,23 @@ parseModule <- function(node,buf,i,con,vcdfile) {
                 cchild$humanReadableName <- paste0(data[4],", bit ",idx,collapse="")
                 }
               }
-
             }
           }
 
-          if (key == "$scope") {
+          if (key == "$scope") { # recurse
             child <- node$AddChild("new scope")
-            ret <- parseModule(child,buf,i,con,vcdfile)
-            i <- ret$bufPos
-            buf <- ret$buf
-          }
-
+            ret <- parseModule(child,tok)
+           }
 
           if (key == "$upscope") {
-            ret <- parseStringFields(buf,i,key,con,vcdfile,"upscope")
-            i <- ret$bufPos
-            buf <- ret$buf
+            ret <- parseStringFields(tok)
             break
           }
 
         } # end valid keyword
       } # end
     } # end while
-    ret$data <- node
-    ret$buf <- buf
+    ret <- node
   } # end inside scope
   return(ret)
 }

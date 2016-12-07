@@ -1,4 +1,6 @@
 .Rhistory
+.RData
+VCD2R.Rproj
 .Rproj.user/*
 .Rproj.user
 testfile/ref.vcd
