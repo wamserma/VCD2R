@@ -1,5 +1,6 @@
 ## string helpers
 
+#' @keywords internal
 strHead <- function(x) {substr(x,1,1)}
 strHeadLower <- function(x) {tolower(substr(x,1,1))}
 strTail <- function(x) {substring(x,2)}

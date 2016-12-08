@@ -7,10 +7,14 @@ This function is the main workhorse, delegating to speciaclised
 functions for parsing the individual fields.
 Altogether this implements a top-down parser for VCD files.}
 \usage{
-parseVCDForKeys(vcdfile, keys, header)
+parseVCDForKeys(vcdfile, keys, header = F)
 }
 \arguments{
 \item{vcdfile}{The file to open.}
+
+\item{keys}{The keys to parse for. Given by the Verilog VCD spec.}
+
+\item{header}{If true only the header is parsed, otherwise the whole signal hierarchy is parsed}
 }
 \value{
 An list containing the parse results for \code{file}.
@@ -21,4 +25,5 @@ This function is the main workhorse, delegating to speciaclised
 functions for parsing the individual fields.
 Altogether this implements a top-down parser for VCD files.
 }
+\keyword{internal}
 

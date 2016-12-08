@@ -1,7 +1,7 @@
 #' an interface to return parse results, setting sensible defaults
 #'
 #' @return An VCDFileObject containing information on \code{file}.
-
+#' @keywords internal
 #' @importFrom Wmisc Tokenizer
 
 buildParseReturn <- function(vcdfile = NA,
@@ -71,15 +71,18 @@ parseVCDHeader <- function(vcdfile) {
 #' Altogether this implements a top-down parser for VCD files.
 #'
 #' @param vcdfile The file to open.
+#' @param keys The keys to parse for. Given by the Verilog VCD spec.
+#' @param header If true only the header is parsed, otherwise the whole signal hierarchy is parsed
 #'
+#' @keywords internal
 #' @return An list containing the parse results for \code{file}.
-parseVCDForKeys <- function(vcdfile,keys,header) {
+parseVCDForKeys <- function(vcdfile,keys,header=F) {
   if (!(length(keys) > 0)) {
     return (buildParseReturn(vcdfile))
   }
 
   if (!file.exists(vcdfile$filename)) {
-    warning("File does not exist: ", filename)
+    warning("File does not exist: ", vcdfile$filename)
     return(buildParseReturn(vcdfile))
   }
 
@@ -89,24 +92,24 @@ parseVCDForKeys <- function(vcdfile,keys,header) {
 
   done <- F
 
+  offset <- tok$getOffset()
   buf <- tok$nextToken()
 
   while (!is.na(buf))
     {
       # fail fast
       if (substr(buf,1,1) != '$') {
-        isEmptyLine <- !grepl("[^[:space:]]+",buf$data[i])
+        isEmptyLine <- !grepl("[^[:space:]]+",buf)
         if (!isEmptyLine) {
-          warning("Ignored data outside block/scope at line ",lines.read + i," in input file.")
+          warning("Ignored data outside block/scope at offset ",offset," bytes in input file.")
         }
         buf <- tok$nextToken()
       } else {
         key <- buf
 
         if (!any(keys == key)) {
-          warning("Invalid keyword \"",key," \" at line ",lines.read + i," in input file.")
+          warning("Invalid keyword \"",key," \" at offset ",offset," bytes in input file.")
           buf <- tok$nextToken()
-          tokens.read <- tokens.read + 1
         } else {
           ret <- parseBlock(tok,key)
           if (key == "$comment") {
@@ -125,7 +128,7 @@ parseVCDForKeys <- function(vcdfile,keys,header) {
             vcd$version <- ret
           }
           if (key == "$enddefinitions") {
-            vcd$dumpstart <- ret$bufPos + ret$chunksParsed + lines.read
+            vcd$dumpstart <- tok$getOffset()
             if (header == T) {
               done <- T
               break
@@ -151,20 +154,10 @@ parseVCDForKeys <- function(vcdfile,keys,header) {
           # recreating the waveforms can be done by reading all four to-vectors in a mergesort-fashion
 
         } # endif parsed data
-      } #endif validity check "fail fast"
+      } #endif validity check ("fail fast")
 
 
   }
   return(vcd)
 }
 
-#' scope parsing dispatcher function to keep \code{parseVCDForKeys} readable
-#' also eases handling of nested scopes (e.g. vars definitions)
-#'
-#' @param vcdfile The file to open.
-#'
-#' @return An list containing the parse results for \code{file}.
-parseBlock <- function(tok,key) {
-  f <- match.fun(paste0("parse_",sub("\\$","",key)))
-  parsedData <- f(tok)
-}

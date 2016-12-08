@@ -54,14 +54,13 @@ parseScope <- function(node,tok) {
     {
       # fail fast
       if (substr(buf,1,1) != '$') {
-        isEmptyLine <- !grepl("[^[:space:]]+",buf$data[i])
+        isEmptyLine <- !grepl("[^[:space:]]+",buf)
         if (!isEmptyLine) {
           warning("Invalid statement in scope definition: ",buf)
         }
         buf <- tok$nextToken()
        } else {
         key <- buf
-
         if (!any(c("$var","$scope","$upscope","$comment") == key)) {
           warning("Invalid keyword in scope definition: ",key)
           buf <- tok$nextToken()
@@ -70,10 +69,8 @@ parseScope <- function(node,tok) {
             # comments are currently ignored
             # alternate options would be collecting them into a separate variable
             # or generating warnings
-            ret <-
-              parseStringFields(tok)
+            ret <- parseStringFields(tok)
            }
-
           if (key == "$var") {
             data <- parseStringFields(tok)
             if (!any(
@@ -106,7 +103,7 @@ parseScope <- function(node,tok) {
 
           if (key == "$scope") { # recurse
             child <- node$AddChild("new scope")
-            ret <- parseModule(child,tok)
+            ret <- parseScope(child,tok)
            }
 
           if (key == "$upscope") {

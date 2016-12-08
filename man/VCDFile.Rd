@@ -7,9 +7,9 @@
 VCDFile(filename = NA_character_, parseHeader = T)
 }
 \arguments{
-\item{parseHeader}{A flag whether the header should be parsed on opening the file. Default is TRUE.}
+\item{filename}{The file to open.}
 
-\item{file}{The file to open.}
+\item{parseHeader}{A flag whether the header should be parsed on opening the file. Default is TRUE.}
 }
 \value{
 An VCDFileObject containing information on \code{file}.
@@ -18,8 +18,10 @@ An VCDFileObject containing information on \code{file}.
 Create an VCDFileObject
 }
 \examples{
-#VCDFile()
-#VCDFile("inter.vcd")
-#VCDFile("inter.vcd",F)
+\dontrun{
+VCDFile()
+VCDFile("inter.vcd")
+VCDFile("inter.vcd",F)
+}
 }
 

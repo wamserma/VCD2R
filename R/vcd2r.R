@@ -15,13 +15,16 @@ NULL
 
 #' Create an VCDFileObject
 #'
-#' @param file The file to open.
+#' @param filename The file to open.
 #' @param parseHeader A flag whether the header should be parsed on opening the file. Default is TRUE.
 #' @return An VCDFileObject containing information on \code{file}.
 #' @examples
-#' #VCDFile()
-#' #VCDFile("inter.vcd")
-#' #VCDFile("inter.vcd",F)
+#' \dontrun{
+#' VCDFile()
+#' VCDFile("inter.vcd")
+#' VCDFile("inter.vcd",F)
+#' }
+
 
 VCDFile <- function(filename = NA_character_,parseHeader = T)
 {

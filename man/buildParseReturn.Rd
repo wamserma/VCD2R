@@ -13,4 +13,5 @@ An VCDFileObject containing information on \code{file}.
 \description{
 an interface to return parse results, setting sensible defaults
 }
+\keyword{internal}
 

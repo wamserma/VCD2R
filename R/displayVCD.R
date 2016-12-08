@@ -67,7 +67,6 @@ plotToggles <-
 
 plotToggles.dygraph <-
   function(timestamps, ys, timescale,events=vector("list",0L)) {
-
     df<-cbind(as.numeric(timestamps),as.data.frame(sapply(ys, function(y) noNA(y[timestamps])),row.names=timestamps))
     p<-dygraphs::dygraph(df, main = "Toggle Counts vs. Runtime", ylab = "toggle events", xlab = gettextf("time in steps of %s %s",timescale["scale"],timescale["unit"])) %>%
       # set dySeries Labels here
@@ -86,7 +85,6 @@ plotToggles.dygraph <-
     }
 
     #TODO make annotations for certain values like in presAnnotation example
-
     invisible(p)
   }
 
@@ -107,7 +105,6 @@ plotToggles.plotly <-
             name = paste0("toggles to", val, collapse = " "),
             line = list(shape = "hv")
           )
-
     }
     p <-
       plotly::add_trace(
@@ -121,8 +118,11 @@ plotToggles.plotly <-
   }
 
 
-# helper
-
+#' map NA entries to 0
+#' @param x a (numerical) vector possibly containing NAs
+#'
+#' @return the input vector with NAs replaces by 0
+#' @keywords internal
 noNA <- function(x) {
   sapply(x, function(y)
     if (is.na(y)) {

@@ -5,6 +5,25 @@
 # =========================
 
 # -------------------------
+# dispatcher
+# this two-level dispatching is intended to add specific functionalty (as in date parsing)
+# or a possible upcoming hook functionality
+# -------------------------
+
+#' scope parsing dispatcher function to keep \code{parseVCDForKeys} readable
+#' also eases handling of nested scopes (e.g. vars definitions)
+
+#' @param key The keyword for dispatching
+#' @param tok A tokenizer wrapping the VCD file to read from
+#'
+#' @return An list containing the parse results for \code{file}.
+#' @keywords internal
+parseBlock <- function(tok,key) {
+  f <- match.fun(paste0("parse_",sub("\\$","",key)))
+  parsedData <- f(tok)
+}
+
+# -------------------------
 # simple string based fields
 # -------------------------
 
