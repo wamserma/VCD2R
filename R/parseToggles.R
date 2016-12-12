@@ -14,13 +14,11 @@
 #'
 #' @return a module tree and a list of toggle counts and a list of dump events
 #'
+#' @examples
+#' \dontrun{
 #' parseToggles(vcd,"top",3)
 #' parseToggles(vcd,"SBOX1",3)
-
-
-# examples, not run
-# parseToggles(vcd,"top",3)
-# parseToggles(vcd,"SBOX1",3)
+#' }
 
 parseToggles <- function(vcd,top=NA,depth=0L){
   # assume we have a sane VCDFile object
@@ -42,12 +40,16 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   } else {
     detailLevel <- min(vartree$height,rootLevel + depth)
   }
-  detailSignals <- data.tree::Traverse(vartree, traversal = "level", pruneFun = function(x) {(x$level <= detailLevel)}) # keep all with a lower level
+  detailSignals <- data.tree::Traverse(vartree, traversal = "level", pruneFun = function(x) {
+    (x$level <= detailLevel) # keep all with a lower level
+    })
 
   # 4. select all multibit signals and add the artificially generated subsignals for counting
   # the individual bits of the last level nultibit-values need to be included now
   # as the have level == detailLevel + 1 and are not captured by the above traversal
-  multiBitIdxs <- which(unlist(sapply(detailSignals,function(x) {return((x$bits > 1)&&(x$level==detailLevel))})))
+  multiBitIdxs <- which(unlist(sapply(detailSignals,function(x) {
+    return( (x$bits > 1) && (x$level==detailLevel) )
+    })))
   vBitSignals <- unlist(sapply(detailSignals[multiBitIdxs],function(node) node$children))
   relevantSignals <- c(detailSignals,vBitSignals)
 
@@ -135,15 +137,15 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   on.exit(hash::clear(multibitvals),add=T)
 
   #readLine return empty vector when EOF is reached, "" for an empty line
-  while(length(event)) {
+  while (length(event)) {
     indicator <- strHeadLower(event)
 
-        # TIMESTAMP
+    # a TIMESTAMP
     if (indicator == "#") {
       timestamp <- strTail(event)
       timestamps<-list(prev=timestamps,val=timestamp)
     }
-    # DUMP-EVENT
+    # hanle a DUMP-EVENT
     if (indicator == "$") {
       #dump events are currently ignored
       #just cache of multibit-Signals is updated
@@ -184,7 +186,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
       # make R copy the whole linked list of list which is a real performance killer
       if (!(is.null(bucket))) {
         tval <- counts[[bucket]][[indicatorIdx]]$time$val
-        if ((!is.null(tval)) && (tval != timestamp)) {
+        if ( (!is.null(tval)) && (tval != timestamp) ) {
           counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time,val=timestamp)
           counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count,val=1L)
         } else {
@@ -193,7 +195,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
       }
     }
 
-    # MULTIBIT-VARIABLE
+    # hanle a MULTIBIT-VARIABLE
     if (isMultiBit(indicator)) {
       valname <- strsplit(strTail(event)," ")[[1]]
       sig <- valname[2]
@@ -223,7 +225,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
             indicatorIdx <- scalarIndicatorToInt(bits.val[i])
             tval <- counts[[bucket]][[indicatorIdx]]$time$val
 
-            if ((!is.null(tval)) && (tval != timestamp)) {
+            if ( (!is.null(tval)) && (tval != timestamp) ) {
               counts[[bucket]][[indicatorIdx]]$time <- list(prev=counts[[bucket]][[indicatorIdx]]$time,val=timestamp)
               counts[[bucket]][[indicatorIdx]]$count <- list(prev=counts[[bucket]][[indicatorIdx]]$count,val=1L)
             } else {
@@ -238,14 +240,13 @@ parseToggles <- function(vcd,top=NA,depth=0L){
     event <- readLines(con, n = 1)
   }
 
-
-
   #finally we can prune vartree
   if (depth >= 0) {
-   vartree$Prune(pruneFun = function(x) {
-    if (x$level <= detailLevel) return(TRUE)
-    if ((x$level == detailLevel+1) && !is.null(x$parent$bits) && (x$parent$bits > 1)) return(TRUE)
-    return(FALSE)})
+    vartree$Prune(pruneFun = function(x) {
+      if (x$level <= detailLevel) return(TRUE)
+      if ( (x$level == detailLevel+1) && !is.null(x$parent$bits) && (x$parent$bits > 1) ) return(TRUE)
+      return(FALSE)
+    })
   }
 
   # and unlist the counts
@@ -262,4 +263,3 @@ parseToggles <- function(vcd,top=NA,depth=0L){
 
   return(list(hierarchy = vartree,counts = counts,timestamps = timestamps))
 }
-

@@ -21,6 +21,7 @@
 parseBlock <- function(tok,key) {
   f <- match.fun(paste0("parse_",sub("\\$","",key)))
   parsedData <- f(tok)
+  return(parsedData)
 }
 
 # -------------------------
@@ -28,12 +29,12 @@ parseBlock <- function(tok,key) {
 # -------------------------
 
 parse_comment <- function(tok) {
-  ret <- parseStringFields(tok)
+  ret <- paste0(parseStringFields(tok),collapse = " ")
   return(ret)
 }
 
 parse_date <- function(tok) {
-  ret <- parseStringFields(tok)
+  ret <- paste0(parseStringFields(tok),collapse = " ")
   return(ret)
 }
 
@@ -52,7 +53,7 @@ parse_timescale <- function(tok) {
 }
 
 parse_version <- function(tok) {
-  ret <- parseStringFields(tok)
+  ret <- paste0(parseStringFields(tok),collapse = " ")
   return(ret)
 }
 
@@ -99,8 +100,8 @@ parseStringFields <- function(tok) {
       if (!isEmptyLine) {
         ret<- c(ret,buf)
       }
+      buf <- tok$nextToken()
     }
-    buf <- tok$nextToken()
   }
   return (ret)
 }

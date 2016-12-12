@@ -18,11 +18,14 @@ Black/Whitelisting of signals is an optional further enhancement.}
 }
 \value{
 a module tree and a list of toggle counts and a list of dump events
-
-parseToggles(vcd,"top",3)
-parseToggles(vcd,"SBOX1",3)
 }
 \description{
 Parses a VCD file and generated toggle count statistics.
+}
+\examples{
+\dontrun{
+parseToggles(vcd,"top",3)
+parseToggles(vcd,"SBOX1",3)
+}
 }
 

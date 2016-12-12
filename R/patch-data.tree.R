@@ -16,8 +16,8 @@ Find <- function(node, value, field="name", traversal = c("pre-order", "post-ord
 
 }
 
-
-#trav <- Traverse(node, traversal, pruneFun = NULL, filterFun = NULL)
+#' this expects a traversal and returns only the first match, behaves closely to data.tree::FindNode
+#' trav <- Traverse(node, traversal, pruneFun = NULL, filterFun = NULL)
 FindFirstFast <- function(trav, name){
   ret <- NULL
   for (x in trav) {

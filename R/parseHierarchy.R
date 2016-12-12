@@ -17,9 +17,8 @@
 parseHierarchy <- function(tok) {
   # create an empty tree and hand off to the module parser
   node <- data.tree::Node$new()
-  ret <- parseScope(node,tok)
-  ret$data <- node
-  return(ret)
+  parseScope(node,tok)
+  return(node)
 }
 
 
@@ -36,10 +35,10 @@ parseHierarchy <- function(tok) {
 parseScope <- function(node,tok) {
   # this function is entered only when a new scope is hit
   data <- parseStringFields(tok)
-
   # we create a non-leaf node, if data is of proper type
   if (!any(data[1] == c("begin","fork","function","module","task"))) {
     warning("Invalid scope type found: ",data[1])
+  }
     node$type <- data[1]
     node$name <- data[2]
 
@@ -50,42 +49,41 @@ parseScope <- function(node,tok) {
     # ----
 
     buf <- tok$nextToken()
-    while (!is.na(buf))
-    {
+
+    while (!is.na(buf)){
       # fail fast
-      if (substr(buf,1,1) != '$') {
+      if (substr(buf,1,1) != "$") {
         isEmptyLine <- !grepl("[^[:space:]]+",buf)
         if (!isEmptyLine) {
           warning("Invalid statement in scope definition: ",buf)
         }
-        buf <- tok$nextToken()
        } else {
         key <- buf
         if (!any(c("$var","$scope","$upscope","$comment") == key)) {
           warning("Invalid keyword in scope definition: ",key)
-          buf <- tok$nextToken()
         } else {
           if (key == "$comment") {
             # comments are currently ignored
             # alternate options would be collecting them into a separate variable
             # or generating warnings
-            ret <- parseStringFields(tok)
+            parseStringFields(tok)
            }
           if (key == "$var") {
             data <- parseStringFields(tok)
             if (!any(
               data[1] == c(
-                "event","integer","parameter","real","reg","supply0","supply1","time","tri","triand","trior","trireg","tri0","tri1","wand","wire","wor"
-              )
+                "event","integer","parameter","real","reg","supply0","supply1",
+                "time","tri","triand","trior","trireg","tri0","tri1","wand",
+                "wire","wor")
             )) {
               warning("Invalid var type: ",data[1])
             } else {
-              if (data[2] == 1) { # single bit
+              if (data[2] == 1) { # single bit # nolint
               child <- node$AddChild(data[3])
               child$type <- data[1]
               child$bits <- data[2]
               child$humanReadableName <- data[4]
-              } else { # multi bit, gets appropriate number of children
+              } else { # multi bit, gets appropriate number of children #nolint
                 child <- node$AddChild(data[3])
                 child$type <- data[1]
                 child$bits <- data[2]
@@ -101,20 +99,19 @@ parseScope <- function(node,tok) {
             }
           }
 
-          if (key == "$scope") { # recurse
+          if (key == "$scope") { # recurse #nolint
             child <- node$AddChild("new scope")
-            ret <- parseScope(child,tok)
+            parseScope(child,tok)
            }
 
           if (key == "$upscope") {
-            ret <- parseStringFields(tok)
+            parseStringFields(tok)
             break
           }
 
         } # end valid keyword
-      } # end
-    } # end while
-    ret <- node
+        buf <- tok$nextToken()
+      } # end while
   } # end inside scope
-  return(ret)
+  return(node)
 }

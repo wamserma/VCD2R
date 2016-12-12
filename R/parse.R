@@ -90,26 +90,21 @@ parseVCDForKeys <- function(vcdfile,keys,header=F) {
 
   vcd <- buildParseReturn()
 
-  done <- F
-
   offset <- tok$getOffset()
   buf <- tok$nextToken()
 
-  while (!is.na(buf))
-    {
+  while (!is.na(buf)){
       # fail fast
-      if (substr(buf,1,1) != '$') {
-        isEmptyLine <- !grepl("[^[:space:]]+",buf)
+      if (substr(buf,1,1) != "$") {
+          isEmptyLine <- !grepl("[^[:space:]]+",buf)
         if (!isEmptyLine) {
           warning("Ignored data outside block/scope at offset ",offset," bytes in input file.")
         }
-        buf <- tok$nextToken()
       } else {
         key <- buf
 
         if (!any(keys == key)) {
           warning("Invalid keyword \"",key," \" at offset ",offset," bytes in input file.")
-          buf <- tok$nextToken()
         } else {
           ret <- parseBlock(tok,key)
           if (key == "$comment") {
@@ -130,19 +125,19 @@ parseVCDForKeys <- function(vcdfile,keys,header=F) {
           if (key == "$enddefinitions") {
             vcd$dumpstart <- tok$getOffset()
             if (header == T) {
-              done <- T
+              buf<-NA_character_
               break
             }
           }
 
           if (key == "$scope") {
-            if (!is.na(vcd$hierarchy)) {
+            if (any(class(vcd$hierarchy)=="Node")) {
               warning("multiple top modules, only lastest is kept")
             }
-            vcd$hierarchy = ret$data
+            vcd$hierarchy <- ret
           }
 
-          if ((key == "$upscope") | (key == "$var")) {
+          if ( (key == "$upscope") | (key == "$var") ) {
             warning("Malformed VCD file: ",key," outside scope.")
           }
 
@@ -155,9 +150,8 @@ parseVCDForKeys <- function(vcdfile,keys,header=F) {
 
         } # endif parsed data
       } #endif validity check ("fail fast")
-
-
+    buf <- tok$nextToken()
   }
+  tok$close()
   return(vcd)
 }
-

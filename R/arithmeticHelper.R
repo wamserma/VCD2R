@@ -1,32 +1,49 @@
 ## string helpers
 
 #' @keywords internal
-strHead <- function(x) {substr(x,1,1)}
-strHeadLower <- function(x) {tolower(substr(x,1,1))}
-strTail <- function(x) {substring(x,2)}
-strRevAndSplit<-function(x) {rev(strsplit(x,"")[[1]])}
+strHead <- function(x) {
+  substr(x,1,1)
+  }
+strHeadLower <- function(x) {
+  tolower(substr(x,1,1))
+  }
+strTail <- function(x) {
+  substring(x,2)
+  }
+strRevAndSplit<-function(x) {
+  rev(strsplit(x,"")[[1]])
+  }
 
 # map ("0","1","z","x",other) -> (1,2,3,4,0)
 scalarIndicatorToInt <- function(x) {
-    x<-strsplit(x,"")[[1]][1]
-	ret <- 0
-	if (x == '0') {ret <- 1;}
-      else if (x == '1') {ret <- 2;}
-      else if (x == 'z') {ret <- 3;}
-      else if (x == 'x') {ret <- 4;}
-      else {ret <- 0;}
-	return(ret)
+  x<-strsplit(x,"")[[1]][1]
+  ret <- 0
+  if (x == "0") {
+    ret <- 1;
+  } else if (x == "1") {
+    ret <- 2;
+  } else if (x == "z") {
+    ret <- 3;
+  } else if (x == "x") {
+    ret <- 4;
+  } else {
+    ret <- 0;
   }
-#scalarIndicatorToInt("zoo")==3
+  return(ret)
+  }
 
 # map ("b","r",other) -> (1,2,0)
 isMultiBit <- function(x) {
     x<-strsplit(x,"")[[1]][1]
-	ret <- 0
-	if (x == 'b') {ret <- 1;}
-      else if (x == 'r') {ret <- 2;}
-      else {ret <- 0;}
-	return(ret)
+  ret <- 0
+  if (x == "b") {
+    ret <- 1;
+    } else if (x == "r") {
+        ret <- 2;
+        } else {
+        ret <- 0;
+      }
+  return(ret)
   }
 
 # Note: we are assuming less that 2147483647 toggles per (accumulated) signal per timestamp,
@@ -46,9 +63,7 @@ incwithNA<-function(a) {
 incwithNULL <- function(a) {
   if (is.null(a)) {
     return(1L)
-  }
-  else
-  {
+  } else {
     return(a + 1L)
   }
 }
@@ -61,17 +76,14 @@ leftExtend <- function(val,bits){
   return(paste0(c(ext,val),collapse=""))
 }
 
-# tests
-#leftExtend("10",5)=="00010"
-#leftExtend("01",6)=="000001"
-#leftExtend("ZX",7)=="ZZZZZZX"
-#leftExtend("X1",8)=="XXXXXXX1"
 
 # add two named integer vectors
 addToggleVecs <- function(a,b){
    c<-vector("integer",0L)
    nc<-sort(unique(c(names(a),names(b))))
-   c<-sapply(nc,function(x) {addwithNA(a[x],b[x])})
+   c<-sapply(nc,function(x) {
+     addwithNA(a[x],b[x])
+     })
    names(c)<-nc
    return(c)
 }
@@ -102,7 +114,8 @@ addToggleVecsByName.test <- function(vnames,vtype=c("0","1","z","x"),counts=vect
   ret<-sapply(timestamps,function(ts) {
     sum(unlist(sapply(varcounts,function(var) {
       unname(var[ts])
-    })),na.rm = T)
+    })),
+    na.rm = T)
   })
   names(ret)<-timestamps
   return(ret)
@@ -119,7 +132,7 @@ addToggleVecsByName.mat <- function(vnames,vtype=c("0","1","z","x"),counts=vecto
   mat<-matrix(NA_integer_,nrow=length(timestamps),ncol = length(vnames), dimnames=list(timestamps,vnames))
 
   for (var in vnames) {
-    if ((!is.null(counts[[var]][[vtype]])) && (length(counts[[var]][[vtype]])>0)){
+    if ( (!is.null(counts[[var]][[vtype]])) && (length(counts[[var]][[vtype]])>0) ){
       newcol<-counts[[var]][[vtype]][timestamps]
       if (length(newcol)>0) mat[,var]<-newcol
     }
@@ -142,7 +155,9 @@ addToggleVecsByName <- function(vnames,vtype=c("0","1","z","x"),counts=vector("l
   if (length(timestamps) == 0) return(vector("integer",0L))
   timestamps<-sorttimestamps(timestamps)
   varcounts<-sapply(counts[vnames],function(var) var[[vtype]])
-  varcounts<-varcounts[!sapply(varcounts,function(x) {is.null(x) || (length(x) < 1)})]
+  varcounts<-varcounts[!sapply(varcounts,function(x) {
+    is.null(x) || (length(x) < 1)
+    })]
   countIdxs<-rep(1L,length(varcounts))
   matchIdx<-vector("integer",0L)
   countHeads<-sapply(1L:length(varcounts),function(x) varcounts[[x]][countIdxs[[x]]])
@@ -171,21 +186,3 @@ sorttimestamps<-function(x){
   ret<-unlist(lapply(1:maxlen,function(i) sort(x[xchar==i])))
   return(ret)
   }
-
-
-#tests
-#all(addToggleVecsL2(u,t,s)==addToggleVecsL(u,t,s))
-#microbenchmark::microbenchmark(loop=addToggleVecsL2(u,t,s),
-#                               vec=addToggleVecsL(u,t,s),
-#                               times=10)
-
-
-
-#tests
-# t<-1:4
-# names(t)<-c("13","24","36","48")
-# u<-1:6
-# names(u)<-c("17","24","36","42","48","51")
-# ref <- c(1,1,4,6,4,9,6)
-# names(ref)<-c("13","17","24","36","42","48","51")
-# all(addToggleVecs(t,u)==ref)

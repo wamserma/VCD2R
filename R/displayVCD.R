@@ -30,12 +30,9 @@ plotToggles <-
     ys <- parse$counts[[top]]
 
     for (val in names(ys)) {
-      if ((length(ys[[val]]) == 0) || (weights[[val]] == 0))
-      {
+      if ( (length(ys[[val]]) == 0) || (weights[[val]] == 0) ){
         ys[[val]] <- NULL # drop signal that have no count or weight zero
-      }
-      else
-      {
+      } else{
         ys[[val]] <- sapply(noNA(ys[[val]]), function(x)
           weights[[val]] * x)
       }
@@ -50,7 +47,7 @@ plotToggles <-
 
     dotargs<-list(...)
 
-    if (type == "dygraph") {
+    if (type == "dygraph"){
       events <- vector("list",0L)
       if (!is.null(dotargs$events)) {
         events<-dotargs$events
@@ -58,8 +55,7 @@ plotToggles <-
       p <- plotToggles.dygraph(parse$timestamps, ys, vcd$timescale,events)
     }
 
-    if (type == "plotly")
-    {
+    if (type == "plotly"){
       p <- plotToggles.plotly(parse$timestamps, ys, vcd$timescale,...)
     }
     invisible(list(plot=p,counts=parse$counts))
@@ -68,11 +64,13 @@ plotToggles <-
 plotToggles.dygraph <-
   function(timestamps, ys, timescale,events=vector("list",0L)) {
     df<-cbind(as.numeric(timestamps),as.data.frame(sapply(ys, function(y) noNA(y[timestamps])),row.names=timestamps))
-    p<-dygraphs::dygraph(df, main = "Toggle Counts vs. Runtime", ylab = "toggle events", xlab = gettextf("time in steps of %s %s",timescale["scale"],timescale["unit"])) %>%
+    p<-dygraphs::dygraph(df, main = "Toggle Counts vs. Runtime",
+                         ylab = "toggle events",
+                         xlab = gettextf("time in steps of %s %s",timescale["scale"],timescale["unit"])) %>%
       # set dySeries Labels here
       dygraphs::dyOptions(stackedGraph = FALSE, stepPlot=T) %>%
       dygraphs::dyRangeSelector()
-      #dygraphs::dyRoller(rollPeriod = 2) # average over one clock cycle, TODO: make optional
+      #dygraphs::dyRoller(rollPeriod = 2) # average over one clock cycle, TODO: make optional # nolint
 
     if (length(events) > 0) {
       for (e in 1:length(events)) {
