@@ -22,7 +22,7 @@ git clone https://github.com/wamserma/VCD2R.git
 install the build dependencies
 
 ```r
-install.packages(c("devtools", "roxygen2", "testthat", "knitr"))
+install.packages(c("devtools", "roxygen2", "testthat", "knitr", "covr"))
 ```
 
 open project in RStudio and hit `Ctrl + Shift + L`
