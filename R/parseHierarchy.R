@@ -66,10 +66,10 @@ parseScope <- function(node,tok) {
             # comments are currently ignored
             # alternate options would be collecting them into a separate variable
             # or generating warnings
-            parseStringFields(tok)
+            parse_comment(tok)
            }
           if (key == "$var") {
-            data <- parseStringFields(tok)
+            data <- parse_var(tok)
             if (!any(
               data[1] == c(
                 "event","integer","parameter","real","reg","supply0","supply1",
@@ -105,7 +105,7 @@ parseScope <- function(node,tok) {
            }
 
           if (key == "$upscope") {
-            parseStringFields(tok)
+            parse_upscope(tok)
             break
           }
 

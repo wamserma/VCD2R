@@ -104,6 +104,10 @@ addToggleVecsByName <- function(vnames,vtype=c("0","1","z","x"),counts=vector("l
   if (length(counts)==0) {
     return(counts)
   }
+  if (length(vtype)!=0) {
+    warning("argument vtype has length > 1, remaining values ignored")
+    vtype<-vtype[1]
+  }
   timestamps<-unique(unlist(sapply(vnames,function(x) names(counts[[x]][[vtype]]))))
   if (length(timestamps) == 0) return(vector("integer",0L))
   timestamps<-sorttimestamps(timestamps)

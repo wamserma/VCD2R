@@ -81,15 +81,7 @@ test_that("comparing string-encoded numbers works",{
   expect_false(stringnumLT("",""))
 })
 
-test_that("adding toggle-count-vectors works",{
-  t<-1:4
-  names(t)<-c("13","24","36","48")
-  u<-1:6
-  names(u)<-c("17","24","36","42","48","51")
-  ref <- c(1,1,4,6,4,9,6)
-  names(ref)<-c("13","17","24","36","42","48","51")
-  all(addToggleVecsByName(t,u)==ref)
-})
+
 
 
 test_that("sorting timestamps works",{
@@ -97,4 +89,19 @@ test_that("sorting timestamps works",{
   expect_equal(sorttimestamps(t),c("3","8","13","17","24","24","36","36","42","48","48","51","147"))
   expect_equal(sorttimestamps(c("")),c(""))
   expect_error(sorttimestamps(c()))
+})
+
+test_that("adding toggle-count-vectors works",{
+  t<-1:4
+  names(t)<-c("13","24","36","48")
+  u<-1:6
+  names(u)<-c("17","24","36","42","48","51")
+  ref <- c(1,1,4,6,4,9,6)
+  names(ref)<-c("13","17","24","36","42","48","51")
+  counts<-list("a"=list("1"=t,"0"=u,"x"=c("0"=0L),"z"=c("0"=0L)),
+               "b"=list("1"=u,"0"=t,"x"=c("0"=0L),"z"=c("0"=0L)))
+  expect_identical(addToggleVecsByName("foo","bar"),list())
+  expect_warning(ret<-addToggleVecsByName(c("a","b"),counts = counts),
+                 "argument vtype has length > 1, remaining values ignored")
+  expect_equal(ret,ref)
 })
