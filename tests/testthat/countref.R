@@ -75,7 +75,7 @@ structure(list(hierarchy = cth, counts = structure(list(
 "2211", "2296", "2302", "2303")), .Names = c("hierarchy", "counts",
 "timestamps"))
 counts.allref <-
-structure(list(hierarchy = data.tree::FromListSimple(cah), counts = structure(list(
+structure(list(hierarchy = cah, counts = structure(list(
     `'` = structure(list(`0` = structure(1L, .Names = "2211"),
         `1` = structure(1L, .Names = "0"), z = structure(integer(0), .Names = character(0)),
         x = structure(integer(0), .Names = character(0))), .Names = c("0",
