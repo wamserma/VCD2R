@@ -105,3 +105,7 @@ test_that("adding toggle-count-vectors works",{
                  "argument vtype has length > 1, remaining values ignored")
   expect_equal(ret,ref)
 })
+
+test_that("mapping NAs to 0 works",{
+  expect_identical(noNA(c(1,NA_integer_,3L)),c(1,0,3L))
+})

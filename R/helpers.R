@@ -142,4 +142,18 @@ sorttimestamps<-function(x){
   maxlen<-max(xchar)
   ret<-unlist(lapply(1:maxlen,function(i) sort(x[xchar==i])))
   return(ret)
-  }
+}
+
+#' map NA entries to 0
+#' @param x a (numerical) vector possibly containing NAs
+#'
+#' @return the input vector with NAs replaces by 0
+#' @keywords internal
+noNA <- function(x) {
+  sapply(x, function(y)
+    if (is.na(y)) {
+      0
+    } else {
+      y
+    })
+}

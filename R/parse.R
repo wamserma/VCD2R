@@ -11,7 +11,9 @@ buildParseReturn <- function(vcdfile = NA,
                              date = NA,
                              version = NA,
                              linesRead = 0) {
+  # function arguments used to update the vcdfile object given as argument
   if (!is.na(vcdfile)) {
+
     if (is.na(timescale))
       timescale <- vcdfile$timescale
     if (is.na(dumpstart))
@@ -25,7 +27,7 @@ buildParseReturn <- function(vcdfile = NA,
   }
 
   ret <- list(
-    vcd = vcdfile,
+    vcd = vcdfile, #TODO do we really want to keep the old object here? vcd$vcd is never used .. or is it?
     timescale = timescale,
     version = version,
     dumpstart = dumpstart,

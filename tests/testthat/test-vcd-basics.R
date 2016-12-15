@@ -1,4 +1,4 @@
-context("VCD setup and teardown")
+context("VCD setup, teardown and printing")
 
 test_that("creating a VCD object works",{
           vcd<-VCDFile()
