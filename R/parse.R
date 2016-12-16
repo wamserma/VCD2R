@@ -1,41 +1,5 @@
-#' an interface to return parse results, setting sensible defaults
-#'
-#' @return An VCDFileObject containing information on \code{file}.
-#' @keywords internal
 #' @importFrom Wmisc Tokenizer
-
-buildParseReturn <- function(vcdfile = NA,
-                             timescale = NA,
-                             dumpstart = NA,
-                             hierarchy = NA,
-                             date = NA,
-                             version = NA,
-                             linesRead = 0) {
-  # function arguments used to update the vcdfile object given as argument
-  if (!is.na(vcdfile)) {
-
-    if (is.na(timescale))
-      timescale <- vcdfile$timescale
-    if (is.na(dumpstart))
-      dumpstart <- vcdfile$dumpstart
-    if (is.na(hierarchy))
-      hierarchy <- vcdfile$hierarchy
-    if (is.na(date))
-      date <- vcdfile$date
-    if (is.na(version))
-      version <- vcdfile$version
-  }
-
-  ret <- list(
-    vcd = vcdfile, #TODO do we really want to keep the old object here? vcd$vcd is never used .. or is it?
-    timescale = timescale,
-    version = version,
-    dumpstart = dumpstart,
-    hierarchy = hierarchy,
-    date = date,
-    linesRead = linesRead
-  )
-}
+NULL
 
 # ===================
 # parsing functions
@@ -47,6 +11,7 @@ buildParseReturn <- function(vcdfile = NA,
 #'
 #' @return An list containing the parse results for \code{file}.
 
+#' @keywords internal
 parseVCDHeader <- function(vcdfile) {
   keywords <- c(
     "$comment",
@@ -80,17 +45,23 @@ parseVCDHeader <- function(vcdfile) {
 #' @return An list containing the parse results for \code{file}.
 parseVCDForKeys <- function(vcdfile,keys,header=F) {
   if (!(length(keys) > 0)) {
-    return (buildParseReturn(vcdfile))
+    return(vcdfile)
   }
 
   if (!file.exists(vcdfile$filename)) {
     warning("File does not exist: ", vcdfile$filename)
-    return(buildParseReturn(vcdfile))
+    return(vcdfile)
   }
 
   tok<-Tokenizer$new(vcdfile$filename)
 
-  vcd <- buildParseReturn()
+  vcd <- list(
+    timescale = NA,
+    version = NA,
+    dumpstart = NA,
+    hierarchy = NA,
+    date = NA
+  )
 
   offset <- tok$getOffset()
   buf <- tok$nextToken()
