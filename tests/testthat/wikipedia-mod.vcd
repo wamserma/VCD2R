@@ -23,7 +23,9 @@ $upscope $end
 $var wire 1 ( empty $end
 invalidtoken
 $var wire 1 ) underrun $end
+$invalidkeyword $end
 $upscope $end
+$comment this comment is ignored here $end
 $scope module otherlogic $end
 $dumpvars
 $var wire 8 # data $end

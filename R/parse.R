@@ -105,17 +105,17 @@ parseVCDForKeys <- function(vcdfile,keys,header=F) {
 
           if (key == "$scope") {
             if (any(class(vcd$hierarchy)=="Node")) {
-              warning("multiple top modules, only lastest is kept")
+              warning("multiple top modules, only lastest is kept. At offset ",offset," bytes in input file.")
             }
             vcd$hierarchy <- ret
           }
 
           if ( (key == "$upscope") | (key == "$var") ) {
-            warning("Malformed VCD file: ",key," outside scope.")
+            warning("Malformed VCD file: ",key," outside scope at offset ",offset," bytes in input file.")
           }
 
           if (any(key == c("$dumpall","$dumpon","$dumpoff","$dumpvars")) & header) {
-            warning("Malformed VCD file: ",key," in header.")
+            warning("Malformed VCD file: ",key," in header at offset ",offset," bytes in input file.")
           }
 
           # record all dump-events, so they will not be plotted as toggles
@@ -123,6 +123,7 @@ parseVCDForKeys <- function(vcdfile,keys,header=F) {
 
         } # endif parsed data
       } #endif validity check ("fail fast")
+    offset <- tok$getOffset()
     buf <- tok$nextToken()
   }
   tok$close()

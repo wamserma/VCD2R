@@ -39,8 +39,12 @@ parse_date <- function(tok) {
 }
 
 parse_enddefinitions <- function(tok) {
-  ret <-
-    parseStringFields(tok)
+  offset <- tok$getOffset()
+  ret <- parseStringFields(tok)
+  if (!(length(ret)==0)){
+    warning("$enddefinitions missing $end")
+    tok$setOffset(offset)
+  }
   return(ret)
 }
 
@@ -72,7 +76,12 @@ parse_scope <- function(tok) {
 }
 
 parse_upscope <- function(tok) {
+  offset <- tok$getOffset()
   ret <- parseStringFields(tok)
+  if (!(length(ret)==0)){
+    warning("$upscope missing $end")
+    tok$setOffset(offset)
+  }
   return(ret)
 }
 
