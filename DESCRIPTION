@@ -14,7 +14,6 @@ Imports:
     hash,
     magrittr,
     plotly,
-    Rcpp,
     Wmisc (>= 0.3.1)
 URL: https://github.com/wamserma/VCD2R/
 BugReports: https://github.com/wamserma/VCD2R/issues

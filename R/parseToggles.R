@@ -122,7 +122,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   on.exit(close(con),add=T)
 
   # we assume dumpstart was set sensible and scan to the next timestamp
-  readLines(con, n = (vcd$dumpstart-2)) #skip
+  readLines(con, n = (2)) #skip #TODO switch to tokenizer
   event <- readLines(con, n = 1)
   while (strHead(event) != "#") {
     event <- readLines(con, n = 1) #readr::read_Lines does not work for subsequent reads on a connection
@@ -136,7 +136,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   multibitvals <- hash::hash()
   on.exit(hash::clear(multibitvals),add=T)
 
-  #readLine return empty vector when EOF is reached, "" for an empty line
+  #readLine return sempty vector when EOF is reached, "" for an empty line
   while (length(event)) {
     indicator <- strHeadLower(event)
 
@@ -195,7 +195,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
       }
     }
 
-    # hanle a MULTIBIT-VARIABLE
+    # handle a MULTIBIT-VARIABLE
     if (isMultiBit(indicator)) {
       valname <- strsplit(strTail(event)," ")[[1]]
       sig <- valname[2]
@@ -242,7 +242,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
 
   #finally we can prune vartree
   if (depth >= 0) {
-    vartree$Prune(pruneFun = function(x) {
+    data.tree::Prune(vartree,pruneFun = function(x) {
       if (x$level <= detailLevel) return(TRUE)
       if ( (x$level == detailLevel+1) && !is.null(x$parent$bits) && (x$parent$bits > 1) ) return(TRUE)
       return(FALSE)

@@ -15,4 +15,5 @@ An list containing the parse results for \code{file}.
 \description{
 Parse a VCDFile for its header fields
 }
+\keyword{internal}
 

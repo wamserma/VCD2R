@@ -96,53 +96,6 @@ stringnumLT <- function(x,y){
   return (x < y)
 }
 
-# adds up the toggle counts of multiple count-vectors by timestamp/name
-# but does not necessarily preserve the order of the timestamps when reconstructing them
-# the time-overhead for reconstruction is negligible, runtime depends only on length of timestamps
-# so this is more effective than making bigger vectors with a lot of NAs
-
-# blowing up into a full matrix is much faster than using the sapply-version in .test, therefore the latter
-# is later used as golden sample in a unit test
-
-addToggleVecsByName.test <- function(vnames,vtype=c("0","1","z","x"),counts=vector("list",0L)){
-  if (length(counts)==0) {
-    return(counts)
-  }
-  timestamps<-unique(unlist(sapply(vnames,function(x) names(counts[[x]][[vtype]]))))
-  if (length(timestamps) == 0) return(vector("integer",0L))
-  varcounts<-sapply(counts[vnames],function(var) var[[vtype]])
-  ret<-sapply(timestamps,function(ts) {
-    sum(unlist(sapply(varcounts,function(var) {
-      unname(var[ts])
-    })),
-    na.rm = T)
-  })
-  names(ret)<-timestamps
-  return(ret)
-}
-
-# assumes all required signals are available, will fail otherwise when trying to expand NULL into a column vector
-addToggleVecsByName.mat <- function(vnames,vtype=c("0","1","z","x"),counts=vector("list",0L)){
-  if (length(counts)==0) {
-    return(counts)
-  }
-  timestamps<-unique(unlist(sapply(vnames,function(x) names(counts[[x]][[vtype]]))))
-  if (length(timestamps) == 0) return(vector("integer",0L))
-
-  mat<-matrix(NA_integer_,nrow=length(timestamps),ncol = length(vnames), dimnames=list(timestamps,vnames))
-
-  for (var in vnames) {
-    if ( (!is.null(counts[[var]][[vtype]])) && (length(counts[[var]][[vtype]])>0) ){
-      newcol<-counts[[var]][[vtype]][timestamps]
-      if (length(newcol)>0) mat[,var]<-newcol
-    }
-  }
-  ret<-rowSums(mat,na.rm=T)
-
-  names(ret)<-timestamps
-  return(ret)
-}
-
 # iterative scanning  -- fastest version
 # assumes all required signals are available, will fail otherwise when trying to access a element of NULL-vector
 # assumes all timestamps are in correct order
@@ -150,6 +103,10 @@ addToggleVecsByName.mat <- function(vnames,vtype=c("0","1","z","x"),counts=vecto
 addToggleVecsByName <- function(vnames,vtype=c("0","1","z","x"),counts=vector("list",0L)){
   if (length(counts)==0) {
     return(counts)
+  }
+  if (length(vtype)!=0) {
+    warning("argument vtype has length > 1, remaining values ignored")
+    vtype<-vtype[1]
   }
   timestamps<-unique(unlist(sapply(vnames,function(x) names(counts[[x]][[vtype]]))))
   if (length(timestamps) == 0) return(vector("integer",0L))
@@ -185,4 +142,18 @@ sorttimestamps<-function(x){
   maxlen<-max(xchar)
   ret<-unlist(lapply(1:maxlen,function(i) sort(x[xchar==i])))
   return(ret)
-  }
+}
+
+#' map NA entries to 0
+#' @param x a (numerical) vector possibly containing NAs
+#'
+#' @return the input vector with NAs replaces by 0
+#' @keywords internal
+noNA <- function(x) {
+  sapply(x, function(y)
+    if (is.na(y)) {
+      0
+    } else {
+      y
+    })
+}

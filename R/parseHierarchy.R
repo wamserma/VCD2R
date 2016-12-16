@@ -48,6 +48,7 @@ parseScope <- function(node,tok) {
     # this is the recursive part of the parsing
     # ----
 
+    offset <- tok$getOffset()
     buf <- tok$nextToken()
 
     while (!is.na(buf)){
@@ -55,28 +56,28 @@ parseScope <- function(node,tok) {
       if (substr(buf,1,1) != "$") {
         isEmptyLine <- !grepl("[^[:space:]]+",buf)
         if (!isEmptyLine) {
-          warning("Invalid statement in scope definition: ",buf)
+          warning("Invalid statement at offset ",offset," bytes in scope definition: ",buf)
         }
        } else {
         key <- buf
         if (!any(c("$var","$scope","$upscope","$comment") == key)) {
-          warning("Invalid keyword in scope definition: ",key)
+          warning("Invalid keyword at offset ",offset," bytes in scope definition: ",key)
         } else {
           if (key == "$comment") {
             # comments are currently ignored
             # alternate options would be collecting them into a separate variable
             # or generating warnings
-            parseStringFields(tok)
+            parse_comment(tok)
            }
           if (key == "$var") {
-            data <- parseStringFields(tok)
+            data <- parse_var(tok)
             if (!any(
               data[1] == c(
                 "event","integer","parameter","real","reg","supply0","supply1",
                 "time","tri","triand","trior","trireg","tri0","tri1","wand",
                 "wire","wor")
             )) {
-              warning("Invalid var type: ",data[1])
+              warning("Invalid var type: '",data[1],"' at offset ",offset," bytes in input file.")
             } else {
               if (data[2] == 1) { # single bit # nolint
               child <- node$AddChild(data[3])
@@ -105,13 +106,14 @@ parseScope <- function(node,tok) {
            }
 
           if (key == "$upscope") {
-            parseStringFields(tok)
+            parse_upscope(tok)
             break
           }
 
         } # end valid keyword
-        buf <- tok$nextToken()
-      } # end while
-  } # end inside scope
+       }
+      offset <- tok$getOffset()
+      buf <- tok$nextToken()
+  } # end while
   return(node)
 }

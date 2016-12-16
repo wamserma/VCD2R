@@ -39,8 +39,12 @@ parse_date <- function(tok) {
 }
 
 parse_enddefinitions <- function(tok) {
-  ret <-
-    parseStringFields(tok)
+  offset <- tok$getOffset()
+  ret <- parseStringFields(tok)
+  if (!(length(ret)==0)){
+    warning("$enddefinitions missing $end")
+    tok$setOffset(offset)
+  }
   return(ret)
 }
 
@@ -72,11 +76,34 @@ parse_scope <- function(tok) {
 }
 
 parse_upscope <- function(tok) {
+  offset <- tok$getOffset()
   ret <- parseStringFields(tok)
+  if (!(length(ret)==0)){
+    warning("$upscope missing $end")
+    tok$setOffset(offset)
+  }
   return(ret)
 }
 
 parse_var <- function(tok) {
+  ret <- parseStringFields(tok)
+  return(ret)
+}
+
+# collect dumps
+parse_dumpall <- function(tok) {
+  ret <- parseStringFields(tok)
+  return(ret)
+}
+parse_dumpon <- function(tok) {
+  ret <- parseStringFields(tok)
+  return(ret)
+}
+parse_dumpoff <- function(tok) {
+  ret <- parseStringFields(tok)
+  return(ret)
+}
+parse_dumpvars <- function(tok) {
   ret <- parseStringFields(tok)
   return(ret)
 }
