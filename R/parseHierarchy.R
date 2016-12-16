@@ -77,7 +77,7 @@ parseScope <- function(node,tok) {
                 "time","tri","triand","trior","trireg","tri0","tri1","wand",
                 "wire","wor")
             )) {
-              warning("Invalid var type: ",data[1],"at offset ",offset," bytes in input file.")
+              warning("Invalid var type: '",data[1],"' at offset ",offset," bytes in input file.")
             } else {
               if (data[2] == 1) { # single bit # nolint
               child <- node$AddChild(data[3])

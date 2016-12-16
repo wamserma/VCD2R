@@ -40,8 +40,18 @@ $var wire 1 ( empty $end
 invalidtoken
 $var wire 1 ) underrun $end
 $upscope $end
-$enddefinitions $end
-$end
+invaliddata
+$dumpall $end
+$dumpon $end
+$dumpoff $end
+$dumpvars $end
+$invalidkey
+$scope magic hogwarts $end
+$comment this is a scope of invalid type containing a valid comment and an invalid var type $end
+$var potter 1 2 wand $end
+$var wire 1 3 hat $end
+$upscope $end
+$enddefinitions
 $var
 $dumpvars
 bxxxxxxxx #

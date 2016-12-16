@@ -31,19 +31,23 @@ test_that("detection of malformed entries in VCD works",{
                  "Invalid keyword at offset 0659 bytes in scope definition: $end",
                  "Invalid keyword at offset 0754 bytes in scope definition: $dumpvars",
                  "Invalid statement at offset 0964 bytes in scope definition: invalidtoken",
-                 "multiple top modules, only lastest is kept. At offset 0723 bytes in input file.")
+                 "multiple top modules, only lastest is kept. At offset 0723 bytes in input file.",
+                 "Ignored data outside block/scope at offset 01022 bytes in input file.",
+                 "Malformed VCD file: '$dumpall' in header at offset 01035 bytes in input file.",
+                 "Malformed VCD file: '$dumpon' in header at offset 01050 bytes in input file.",
+                 "Malformed VCD file: '$dumpoff' in header at offset 01064 bytes in input file.",
+                 "Malformed VCD file: '$dumpvars' in header at offset 01079 bytes in input file.",
+                 "Invalid keyword '$invalidkey' at offset 01095 bytes in input file.",
+                 "Invalid scope type found: magic",
+                 "Invalid var type: 'potter' at offset 01234 bytes in input file.",
+                 "multiple top modules, only lastest is kept. At offset 01108 bytes in input file.",
+                 "$enddefinitions missing $end")
   # Ensure no unexpected warnings,
-  expect_equal(length(gotWarnings), 8)
+  expect_equal(length(gotWarnings), length(longwarning))
 
   # Test that each warning I want is there
   # all.equal qould be shorter, but this gives better reporting
-  expect_equal(longwarning[1], gotWarnings[1])
-  expect_equal(longwarning[2], gotWarnings[2])
-  expect_equal(longwarning[3], gotWarnings[3])
-  expect_equal(longwarning[4], gotWarnings[4])
-  expect_equal(longwarning[5], gotWarnings[5])
-  expect_equal(longwarning[6], gotWarnings[6])
-  expect_equal(longwarning[7], gotWarnings[7])
-  expect_equal(longwarning[8], gotWarnings[8])
-
+  for (i in 1:length(gotWarnings)){
+    expect_equal(longwarning[i], gotWarnings[i])
+  }
 })

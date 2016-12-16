@@ -77,7 +77,7 @@ parseVCDForKeys <- function(vcdfile,keys,header=F) {
         key <- buf
 
         if (!any(keys == key)) {
-          warning("Invalid keyword \"",key," \" at offset ",offset," bytes in input file.")
+          warning("Invalid keyword '",key,"' at offset ",offset," bytes in input file.")
         } else {
           ret <- parseBlock(tok,key)
           if (key == "$comment") {
@@ -114,8 +114,8 @@ parseVCDForKeys <- function(vcdfile,keys,header=F) {
             warning("Malformed VCD file: ",key," outside scope at offset ",offset," bytes in input file.")
           }
 
-          if (any(key == c("$dumpall","$dumpon","$dumpoff","$dumpvars")) & header) {
-            warning("Malformed VCD file: ",key," in header at offset ",offset," bytes in input file.")
+          if (any(key == c("$dumpall","$dumpon","$dumpoff","$dumpvars"))) {
+            warning("Malformed VCD file: '",key,"' in header at offset ",offset," bytes in input file.")
           }
 
           # record all dump-events, so they will not be plotted as toggles

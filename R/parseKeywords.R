@@ -90,6 +90,24 @@ parse_var <- function(tok) {
   return(ret)
 }
 
+# collect dumps
+parse_dumpall <- function(tok) {
+  ret <- parseStringFields(tok)
+  return(ret)
+}
+parse_dumpon <- function(tok) {
+  ret <- parseStringFields(tok)
+  return(ret)
+}
+parse_dumpoff <- function(tok) {
+  ret <- parseStringFields(tok)
+  return(ret)
+}
+parse_dumpvars <- function(tok) {
+  ret <- parseStringFields(tok)
+  return(ret)
+}
+
 # -------------------------
 # worker functions
 # -------------------------
