@@ -17,7 +17,7 @@
 #' @examples
 #' \dontrun{
 #' parseToggles(vcd,"top",3)
-#' parseToggles(vcd,"SBOX1",3)
+#' parseToggles(vcd,"submodule",3)
 #' }
 
 parseToggles <- function(vcd,top=NA,depth=0L){

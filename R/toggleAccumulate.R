@@ -1,10 +1,10 @@
-# returns new counts for a parseResult
+# returns counts (and only counts) for a parseResult
 
 accumulate <- function(sig,parseResult) {
   # find sig in tree - if not there warn and return
   top<-Find(parseResult$hierarchy,sig)
   if (is.null(top)) {
-    warning(gettextf(sig,"%s is not available in this dump"))
+    warning(gettextf(sig,fmt="%s is not available in this dump"))
     return(parseResult$counts)
   }
 

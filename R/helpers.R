@@ -104,7 +104,7 @@ addToggleVecsByName <- function(vnames,vtype=c("0","1","z","x"),counts=vector("l
   if (length(counts)==0) {
     return(counts)
   }
-  if (length(vtype)!=0) {
+  if (length(vtype)>1) {
     warning("argument vtype has length > 1, remaining values ignored")
     vtype<-vtype[1]
   }
