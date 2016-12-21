@@ -31,6 +31,14 @@ test_that("parsing toggle counts works (subhierarchy))",{
   expect_equal(counts.sub$counts[names(counts.subref$counts)],counts.subref$counts)
 })
 
+
+test_that("parsing toggles of nonexistent file fails gracefully",{
+  vcd<-VCDFile("wikipedia.vcd")
+  vcd$filename<-"gnat.vcd"
+  expect_warning(counts<-parseToggles(vcd),"File does not exist: gnat.vcd")
+  expect_equal(counts,list())
+})
+
 test_that("accumulating for a non-existent signal gives an error",{
   vcd<-VCDFile("wikipedia.vcd")
   parsedVCD<-parseToggles(vcd,top=NA,depth=-1L)
@@ -44,4 +52,11 @@ test_that("simple accumulating works",{
   expect_equal(sapply(FUN=length,parsedVCD$counts$`#`),c("0"=0,"1"=0,"z"=0,"x"=0))
   counts<-accumulate("logic",parsedVCD)
   expect_equal(counts$`#`,list("0"=c("2296"=2),"1"=integer(0),"z"=integer(0),"x"=integer(0)))
+})
+
+test_that("parsing and accumulating works for aliased signals",{
+  vcd<-VCDFile("wikipedia-mod2.vcd")
+  parsedVCD<-parseToggles(vcd,top="top",depth=0L)
+  expect_equal(sapply(FUN=length,parsedVCD$counts$top),c("0"=0,"1"=0,"z"=0,"x"=0))
+  expect_equal(parsedVCD$counts$top,list("0"=c("2296"=2),"1"=integer(0),"z"=integer(0),"x"=integer(0)))
 })

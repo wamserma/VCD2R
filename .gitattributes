@@ -4,3 +4,4 @@
 # Declare files that will always have CRLF line endings on checkout.
 tests/testthat/wikipedia.vcd text eol=crlf
 tests/testthat/wikipedia-mod.vcd text eol=crlf
+tests/testthat/wikipedia-mod2.vcd text eol=crlf
