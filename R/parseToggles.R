@@ -21,6 +21,11 @@
 #' }
 
 parseToggles <- function(vcd,top=NA,depth=0L){
+  if (!file.exists(vcd$filename)) {
+    warning("File does not exist: ", vcd$filename)
+    return(list())
+  }
+
   # assume we have a sane VCDFile object
 
   # 1. find the desired root signal
@@ -110,9 +115,6 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   # 7. let the parsing fun begin (using readr::read_lines)
   # TODO: here we assume one entry per line.
   # for future releases use a more sophisticated reader that can deliver tokens
-  if (!file.exists(vcd$filename)) {
-    warning("File does not exist: ", vcd$filename)
-  }
 
   con <- file(
     vcd$filename, "r", blocking = TRUE,
