@@ -44,9 +44,9 @@ parseToggles <- function(vcd,top=NA,depth=0L){
     (x$level <= detailLevel) # keep all with a lower level
     })
 
-  # 4. select all multibit signals and add the artificially generated subsignals for counting
-  # the individual bits of the last level nultibit-values need to be included now
-  # as the have level == detailLevel + 1 and are not captured by the above traversal
+  # 4. select all multibit signals and add the artificially generated subsignals for counting;
+  # the individual bits of the last level multibit-values need to be included now
+  # as they have level == detailLevel + 1 and are not captured by the above traversal
   multiBitIdxs <- which(unlist(sapply(detailSignals,function(x) {
     return( (x$bits > 1) && (x$level==detailLevel) )
     })))
@@ -95,9 +95,8 @@ parseToggles <- function(vcd,top=NA,depth=0L){
 
   timestamps <- vector("list",0L)
 
-  # making counts a hashtable makes things surprisingly slower,
-  # but we can make a sig to bucketIdx LUT for faster list element accesses later
-  # hashtable of lists of lists .. suprisingly slower ..
+  # making counts itself a hashtable makes things,
+  # but we can make a sig to bucketIdx LUT for faster list element accesses
 
   nameIdxList <- 1L:as.integer(length(counts))
   names(nameIdxList) <- names(counts)
@@ -136,7 +135,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   multibitvals <- hash::hash()
   on.exit(hash::clear(multibitvals),add=T)
 
-  #readLine return sempty vector when EOF is reached, "" for an empty line
+  #readLine returns empty vector when EOF is reached, "" for an empty line
   while (length(event)) {
     indicator <- strHeadLower(event)
 
@@ -145,7 +144,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
       timestamp <- strTail(event)
       timestamps<-list(prev=timestamps,val=timestamp)
     }
-    # hanle a DUMP-EVENT
+    # handle a DUMP-EVENT
     if (indicator == "$") {
       #dump events are currently ignored
       #just cache of multibit-Signals is updated
