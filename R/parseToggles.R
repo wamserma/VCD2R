@@ -121,32 +121,30 @@ parseToggles <- function(vcd,top=NA,depth=0L){
 
 
   # 7. let the parsing fun begin
-  # TODO: here we assume one entry per line.
-  # for future releases use a more sophisticated reader that can deliver tokens
+  tok<-Tokenizer$new(vcd$filename)
 
-  con <- file(
-    vcd$filename, "r", blocking = TRUE,
-    encoding = getOption("encoding"), raw = FALSE
-  )
-  on.exit(close(con),add=T)
+  oldDelims<-tok$getDelimiters()
+  tok$setDelimiters(c(10L,13L)) # scan only full lines for timestamps
 
   # we assume dumpstart was set sensible and scan to the next timestamp
-  readLines(con, n = (2)) #skip #TODO switch to tokenizer
-  event <- readLines(con, n = 1)
+  tok$setOffset(vcd$dumpstart)
+  event <- tok$nextToken()
   while (strHead(event) != "#") {
-    event <- readLines(con, n = 1)
-    if (length(event) == 0) {
+    event <- tok$nextToken()
+    if (is.na(event)) {
       warning("premature end of file")
       break
     }
   }
 
+  tok$setDelimiters(oldDelims)
+
   timestamp <- "0"
   multibitvals <- hash::hash()
   on.exit(hash::clear(multibitvals),add=T)
 
-  #readLine returns empty vector when EOF is reached, "" for an empty line
-  while (length(event)) {
+  #Tokenizer returns NA when EOF is reached
+  while (!is.na(event)) {
     indicator <- strHeadLower(event)
 
     # a TIMESTAMP
@@ -163,19 +161,19 @@ parseToggles <- function(vcd,top=NA,depth=0L){
         indicator <- strHeadLower(event)
 
         if (isMultiBit(indicator)) {
-          valname <- strsplit(strTail(event)," ")[[1]]
-          sig <- valname[2]
+          valname <- strTail(event)
+          sig <- tok$nextToken()
           mbNodeBits <- mbCountLUT[[sig]]
           # mbNode will be NULL for signals we do not want to count
           if (!is.null(mbNodeBits)) {
             val <-
-              leftExtend(valname[1],mbNodeBits)
+              leftExtend(valname,mbNodeBits)
             multibitvals[[sig]] <- val
           }
         }
 
-        event <- readLines(con, n = 1)
-        if (length(event) == 0) break
+        event <- tok$nextToken()
+        if (is.na(event)) break
       }
       #fix the indicator overwritten by inner loop
       indicator <- "$"
@@ -206,13 +204,13 @@ parseToggles <- function(vcd,top=NA,depth=0L){
 
     # handle a MULTIBIT-VARIABLE
     if (isMultiBit(indicator)) {
-      valname <- strsplit(strTail(event)," ")[[1]]
-      sig <- valname[2]
+      valname <- strTail(event)
+      sig <- tok$nextToken()
       mbNodeBits <- mbCountLUT[[sig]]
       # mbNodeBits will be NULL for signals we do not want to count
        if (!is.null(mbNodeBits)) {
         val <-
-          leftExtend(valname[1],mbNodeBits)
+          leftExtend(valname,mbNodeBits)
 
         lastval <- multibitvals[[sig]]
         if (is.null(lastval))
@@ -246,7 +244,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
       }
     }
 
-    event <- readLines(con, n = 1)
+    event <- tok$nextToken()
   }
 
   #finally we can prune vartree
