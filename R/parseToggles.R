@@ -87,10 +87,6 @@ parseToggles <- function(vcd,top=NA,depth=0L){
     }
   }
 
-  names(relevantSignals) <- sapply(relevantSignals,function(x) x$name)
-  nodeByNameLUT <- hash::hash(relevantSignals)
-  on.exit(hash::clear(nodeByNameLUT),add=T)
-
   # 6. prepare toggle count structure
   # growing vectors/lists at last level are a huge performance problem
   # linking lists is much better, performance is limited by the memory demand of these deeply nested lists
@@ -124,7 +120,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   on.exit(hash::clear(nameBucketIdxLUT),add=T)
 
 
-  # 7. let the parsing fun begin (using readr::read_lines)
+  # 7. let the parsing fun begin
   # TODO: here we assume one entry per line.
   # for future releases use a more sophisticated reader that can deliver tokens
 
@@ -138,7 +134,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   readLines(con, n = (2)) #skip #TODO switch to tokenizer
   event <- readLines(con, n = 1)
   while (strHead(event) != "#") {
-    event <- readLines(con, n = 1) #readr::read_Lines does not work for subsequent reads on a connection
+    event <- readLines(con, n = 1)
     if (length(event) == 0) {
       warning("premature end of file")
       break
