@@ -31,7 +31,6 @@ test_that("parsing toggle counts works (subhierarchy))",{
   expect_equal(counts.sub$counts[names(counts.subref$counts)],counts.subref$counts)
 })
 
-
 test_that("parsing toggles of nonexistent file fails gracefully",{
   vcd<-VCDFile("wikipedia.vcd")
   vcd$filename<-"gnat.vcd"
