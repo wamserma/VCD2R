@@ -67,8 +67,8 @@ structure(list(name = "logic", type = "module", `#` = structure(list(
 
 counts.topref <-
 structure(list(hierarchy = cth, counts = structure(list(
-    logic = structure(list(`0` = structure(c(4L, 1L, 1L), .Names = c("0",
-    "2211", "2302")), `1` = structure(c(2L, 1L), .Names = c("0",
+    logic = structure(list(`0` = structure(c(4L,1L, 2L, 1L), .Names = c("0",
+    "2211", "2296", "2302")), `1` = structure(c(2L, 1L), .Names = c("0",
     "2296")), z = structure(integer(0), .Names = character(0)),
         x = structure(integer(0), .Names = character(0))), .Names = c("0",
     "1", "z", "x"))), .Names = "logic"), timestamps = c("0",

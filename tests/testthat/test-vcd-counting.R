@@ -57,6 +57,33 @@ test_that("simple accumulating works",{
 test_that("parsing and accumulating works for aliased signals",{
   vcd<-VCDFile("wikipedia-mod2.vcd")
   parsedVCD<-parseToggles(vcd,top="top",depth=0L)
-  expect_equal(sapply(FUN=length,parsedVCD$counts$top),c("0"=0,"1"=0,"z"=0,"x"=0))
-  expect_equal(parsedVCD$counts$top,list("0"=c("2296"=2),"1"=integer(0),"z"=integer(0),"x"=integer(0)))
+  expect_equal(sapply(FUN=length,parsedVCD$counts$top),c("0"=4,"1"=2,"z"=0,"x"=0))
+  expect_equal(parsedVCD$counts$top$"0",c("0"=4,"2211"=1,"2296"=2,"2302"=1))
+  expect_equal(parsedVCD$counts$top$"1",c("0"=2,"2296"=1))
+})
+
+test_that("accumulating after works for aliased signals",{
+  vcd<-VCDFile("wikipedia-mod2.vcd")
+  parsedVCD<-parseToggles(vcd,top="top",depth=-1L)
+  expect_equal(sapply(FUN=length,parsedVCD$counts$"top"),c("0"=0,"1"=0,"z"=0,"x"=0))
+  counts<-accumulate("top",parsedVCD)
+  expect_equal(sapply(FUN=length,counts$top),c("0"=4,"1"=2,"z"=0,"x"=0))
+  expect_equal(counts$top$"0",c("0"=4,"2211"=1,"2296"=2,"2302"=1))
+  expect_equal(counts$top$"1",c("0"=2,"2296"=1))
+})
+
+test_that("warning when no timestamps are present",{
+  vcd<-VCDFile("wikipedia-mod3.vcd")
+  expect_warning(parseToggles(vcd,top="top",depth=-1L),"premature end of file")
+})
+
+test_that("variable dump is parsed",{
+  vcd<-VCDFile("wikipedia-mod4.vcd")
+  parsedVCD<-parseToggles(vcd,top="top",depth=-1L)
+  expect_equal(sapply(FUN=length,parsedVCD$counts$"top"),c("0"=0,"1"=0,"z"=0,"x"=0))
+  counts<-accumulate("top",parsedVCD)
+  expect_equal(sapply(FUN=length,counts$top),c("0"=4,"1"=2,"z"=0,"x"=0))
+  expect_equal(counts$top$"0",c("0"=4,"2211"=1,"2296"=2,"2302"=3))
+  expect_equal(counts$"#.4"$"0",c("2302"=1))
+  expect_equal(counts$"#.6"$"0",c("2302"=1))
 })

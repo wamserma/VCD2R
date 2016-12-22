@@ -67,13 +67,25 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   #    we do not distinguish by modules
 
   nameBucketLUT <- hash::hash()
+  on.exit(hash::clear(nameBucketLUT),add=T)
+
+  mbCountLUT <- hash::hash()
+  on.exit(hash::clear(mbCountLUT),add=T)
+
   for (node in relevantSignals) {
     bucket <- node$name
     for (sig in node$Get("name")) {
       nameBucketLUT[[sig]] <- bucket
     }
+    sigbits <- node$Get("bits")
+    sigbits <- Filter(function(x) {
+      as.integer(x)>1L
+      },
+      sigbits)
+    for (sig in names(sigbits)) {
+      mbCountLUT[[sig]] <- as.integer(sigbits[sig])
+    }
   }
-  on.exit(hash::clear(nameBucketLUT),add=T)
 
   names(relevantSignals) <- sapply(relevantSignals,function(x) x$name)
   nodeByNameLUT <- hash::hash(relevantSignals)
@@ -157,11 +169,11 @@ parseToggles <- function(vcd,top=NA,depth=0L){
         if (isMultiBit(indicator)) {
           valname <- strsplit(strTail(event)," ")[[1]]
           sig <- valname[2]
-          mbNode <- nodeByNameLUT[[sig]]
+          mbNodeBits <- mbCountLUT[[sig]]
           # mbNode will be NULL for signals we do not want to count
-          if (!is.null(mbNode)) {
+          if (!is.null(mbNodeBits)) {
             val <-
-              leftExtend(valname[1],as.integer(mbNode$bits))
+              leftExtend(valname[1],mbNodeBits)
             multibitvals[[sig]] <- val
           }
         }
@@ -200,11 +212,11 @@ parseToggles <- function(vcd,top=NA,depth=0L){
     if (isMultiBit(indicator)) {
       valname <- strsplit(strTail(event)," ")[[1]]
       sig <- valname[2]
-      mbNode <- nodeByNameLUT[[sig]]
-      # mbNode will be NULL for signals we do not want to count
-      if (!is.null(mbNode)) {
+      mbNodeBits <- mbCountLUT[[sig]]
+      # mbNodeBits will be NULL for signals we do not want to count
+       if (!is.null(mbNodeBits)) {
         val <-
-          leftExtend(valname[1],as.integer(mbNode$bits))
+          leftExtend(valname[1],mbNodeBits)
 
         lastval <- multibitvals[[sig]]
         if (is.null(lastval))
