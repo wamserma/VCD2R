@@ -25,7 +25,7 @@ Parses a VCD file and generated toggle count statistics.
 \examples{
 \dontrun{
 parseToggles(vcd,"top",3)
-parseToggles(vcd,"SBOX1",3)
+parseToggles(vcd,"submodule",3)
 }
 }
 

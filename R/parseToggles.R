@@ -17,10 +17,15 @@
 #' @examples
 #' \dontrun{
 #' parseToggles(vcd,"top",3)
-#' parseToggles(vcd,"SBOX1",3)
+#' parseToggles(vcd,"submodule",3)
 #' }
 
 parseToggles <- function(vcd,top=NA,depth=0L){
+  if (!file.exists(vcd$filename)) {
+    warning("File does not exist: ", vcd$filename)
+    return(list())
+  }
+
   # assume we have a sane VCDFile object
 
   # 1. find the desired root signal
@@ -44,9 +49,9 @@ parseToggles <- function(vcd,top=NA,depth=0L){
     (x$level <= detailLevel) # keep all with a lower level
     })
 
-  # 4. select all multibit signals and add the artificially generated subsignals for counting
-  # the individual bits of the last level nultibit-values need to be included now
-  # as the have level == detailLevel + 1 and are not captured by the above traversal
+  # 4. select all multibit signals and add the artificially generated subsignals for counting;
+  # the individual bits of the last level multibit-values need to be included now
+  # as they have level == detailLevel + 1 and are not captured by the above traversal
   multiBitIdxs <- which(unlist(sapply(detailSignals,function(x) {
     return( (x$bits > 1) && (x$level==detailLevel) )
     })))
@@ -62,17 +67,25 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   #    we do not distinguish by modules
 
   nameBucketLUT <- hash::hash()
+  on.exit(hash::clear(nameBucketLUT),add=T)
+
+  mbCountLUT <- hash::hash()
+  on.exit(hash::clear(mbCountLUT),add=T)
+
   for (node in relevantSignals) {
     bucket <- node$name
     for (sig in node$Get("name")) {
       nameBucketLUT[[sig]] <- bucket
     }
+    sigbits <- node$Get("bits")
+    sigbits <- Filter(function(x) {
+      as.integer(x)>1L
+      },
+      sigbits)
+    for (sig in names(sigbits)) {
+      mbCountLUT[[sig]] <- as.integer(sigbits[sig])
+    }
   }
-  on.exit(hash::clear(nameBucketLUT),add=T)
-
-  names(relevantSignals) <- sapply(relevantSignals,function(x) x$name)
-  nodeByNameLUT <- hash::hash(relevantSignals)
-  on.exit(hash::clear(nodeByNameLUT),add=T)
 
   # 6. prepare toggle count structure
   # growing vectors/lists at last level are a huge performance problem
@@ -95,9 +108,8 @@ parseToggles <- function(vcd,top=NA,depth=0L){
 
   timestamps <- vector("list",0L)
 
-  # making counts a hashtable makes things surprisingly slower,
-  # but we can make a sig to bucketIdx LUT for faster list element accesses later
-  # hashtable of lists of lists .. suprisingly slower ..
+  # making counts itself a hashtable makes things,
+  # but we can make a sig to bucketIdx LUT for faster list element accesses
 
   nameIdxList <- 1L:as.integer(length(counts))
   names(nameIdxList) <- names(counts)
@@ -108,12 +120,9 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   on.exit(hash::clear(nameBucketIdxLUT),add=T)
 
 
-  # 7. let the parsing fun begin (using readr::read_lines)
+  # 7. let the parsing fun begin
   # TODO: here we assume one entry per line.
   # for future releases use a more sophisticated reader that can deliver tokens
-  if (!file.exists(vcd$filename)) {
-    warning("File does not exist: ", vcd$filename)
-  }
 
   con <- file(
     vcd$filename, "r", blocking = TRUE,
@@ -125,7 +134,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   readLines(con, n = (2)) #skip #TODO switch to tokenizer
   event <- readLines(con, n = 1)
   while (strHead(event) != "#") {
-    event <- readLines(con, n = 1) #readr::read_Lines does not work for subsequent reads on a connection
+    event <- readLines(con, n = 1)
     if (length(event) == 0) {
       warning("premature end of file")
       break
@@ -136,7 +145,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   multibitvals <- hash::hash()
   on.exit(hash::clear(multibitvals),add=T)
 
-  #readLine return sempty vector when EOF is reached, "" for an empty line
+  #readLine returns empty vector when EOF is reached, "" for an empty line
   while (length(event)) {
     indicator <- strHeadLower(event)
 
@@ -145,7 +154,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
       timestamp <- strTail(event)
       timestamps<-list(prev=timestamps,val=timestamp)
     }
-    # hanle a DUMP-EVENT
+    # handle a DUMP-EVENT
     if (indicator == "$") {
       #dump events are currently ignored
       #just cache of multibit-Signals is updated
@@ -156,11 +165,11 @@ parseToggles <- function(vcd,top=NA,depth=0L){
         if (isMultiBit(indicator)) {
           valname <- strsplit(strTail(event)," ")[[1]]
           sig <- valname[2]
-          mbNode <- nodeByNameLUT[[sig]]
+          mbNodeBits <- mbCountLUT[[sig]]
           # mbNode will be NULL for signals we do not want to count
-          if (!is.null(mbNode)) {
+          if (!is.null(mbNodeBits)) {
             val <-
-              leftExtend(valname[1],as.integer(mbNode$bits))
+              leftExtend(valname[1],mbNodeBits)
             multibitvals[[sig]] <- val
           }
         }
@@ -199,11 +208,11 @@ parseToggles <- function(vcd,top=NA,depth=0L){
     if (isMultiBit(indicator)) {
       valname <- strsplit(strTail(event)," ")[[1]]
       sig <- valname[2]
-      mbNode <- nodeByNameLUT[[sig]]
-      # mbNode will be NULL for signals we do not want to count
-      if (!is.null(mbNode)) {
+      mbNodeBits <- mbCountLUT[[sig]]
+      # mbNodeBits will be NULL for signals we do not want to count
+       if (!is.null(mbNodeBits)) {
         val <-
-          leftExtend(valname[1],as.integer(mbNode$bits))
+          leftExtend(valname[1],mbNodeBits)
 
         lastval <- multibitvals[[sig]]
         if (is.null(lastval))
