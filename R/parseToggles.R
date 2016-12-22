@@ -211,7 +211,6 @@ parseToggles <- function(vcd,top=NA,depth=0L){
        if (!is.null(mbNodeBits)) {
         val <-
           leftExtend(valname,mbNodeBits)
-
         lastval <- multibitvals[[sig]]
         if (is.null(lastval))
           lastval <- val

@@ -31,7 +31,6 @@ test_that("parsing toggle counts works (subhierarchy))",{
   expect_equal(counts.sub$counts[names(counts.subref$counts)],counts.subref$counts)
 })
 
-
 test_that("parsing toggles of nonexistent file fails gracefully",{
   vcd<-VCDFile("wikipedia.vcd")
   vcd$filename<-"gnat.vcd"
@@ -88,7 +87,7 @@ test_that("variable dump is parsed",{
   expect_equal(counts$"#.6"$"0",c("2302"=1))
 })
 
-test_that("tokenizing happend by whitespace, not only newlines",{
+test_that("tokenizing happens by whitespace, not only newlines",{
   vcd<-VCDFile("wikipedia-mod5.vcd")
   parsedVCD<-parseToggles(vcd,top="top",depth=-1L)
   expect_equal(sapply(FUN=length,parsedVCD$counts$"top"),c("0"=0,"1"=0,"z"=0,"x"=0))
@@ -98,3 +97,4 @@ test_that("tokenizing happend by whitespace, not only newlines",{
   expect_equal(counts$"#.4"$"0",c("2302"=1))
   expect_equal(counts$"#.6"$"0",c("2302"=1))
 })
+
