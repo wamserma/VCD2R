@@ -2,14 +2,9 @@
 
 # VCD2R - Reading Value Change Dump Files into R
 
-**NOTE** This may work, but a rewrite from prototype into something more readable/maintenable is currently done. If you want to maintain your sanity, don't look at the code in its current state. Don't consider the master-branch as stable.
-
 ## Huh?
 
 This is (hopefully) going to be a neat little package to read uncompressed VCD files into R for toggle counting, power estimation and simple side-channel analysis (on a teaching level).
-
-It is also hands-on learning in writing a R package.
-
 
 ## Building the Package manually
 
