@@ -109,3 +109,12 @@ test_that("adding toggle-count-vectors works",{
 test_that("mapping NAs to 0 works",{
   expect_identical(noNA(c(1,NA_integer_,3L)),c(1,0,3L))
 })
+
+test_that("searching Nodes works",{
+  data("acme",package = "data.tree")
+  expect_null(FindNodeGeneric(acme, "foo", field="name", traversal = "level", all = F))
+  expect_identical(acme$IT,FindNodeGeneric(acme, "IT", field="name", traversal = "level", all = F))
+  expect_identical(acme$Research,FindNodeGeneric(acme, "Research", field="name", traversal = "pre-order", all = F))
+  expect_identical(list(acme$Research),
+                   FindNodeGeneric(acme, "Research", field="name", traversal = "post-order", all = T))
+})

@@ -157,3 +157,26 @@ noNA <- function(x) {
       y
     })
 }
+
+#' A more flexible variant of data.tree::FindNode(). This implementation allows to set a traversal and search by arbitrary fields.
+#'
+#' `data.tree::Traverse` is used with the `traversal` argument to produce an ordering of the nodes which is subsequently searched. The `traversal` option therefore allows to exert some control over the order of results if the results are not unique.
+#'
+#' @param node The root node of the tree to be searched.
+#' @param value The value for which to seach.
+#' @param field The field to be searched. The fieldname is given as a string.
+#' @param traversal The order in which the tree should be traversed.
+#' @param all whether only the first match or all matches shall be returned
+#'
+#' @return Depending on the value of `all` either a single node or a list of nodes. In the case that no match is found, `NULL` is returned.
+#' @export
+FindNodeGeneric <- function(node, value, field="name", traversal = c("pre-order", "post-order", "in-order", "level",
+                                                                     "ancestor"), all = F){
+
+  trav <- data.tree::Traverse(node, traversal, pruneFun = NULL, filterFun = NULL)
+  ret <- trav[sapply(trav,function(x) any(x[[field]] == value))]
+
+  if (length(ret) == 0) return(NULL)
+  if (!all) return(ret[[1]])
+  return(ret)
+}

@@ -2,7 +2,7 @@
 
 accumulate <- function(sig,parseResult) {
   # find sig in tree - if not there warn and return
-  top<-Find(parseResult$hierarchy,sig)
+  top<-FindNodeGeneric(parseResult$hierarchy,sig,traversal = "level")
   if (is.null(top)) {
     warning(gettextf(sig,fmt="%s is not available in this dump"))
     return(parseResult$counts)

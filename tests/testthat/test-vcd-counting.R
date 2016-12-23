@@ -97,4 +97,3 @@ test_that("tokenizing happens by whitespace, not only newlines",{
   expect_equal(counts$"#.4"$"0",c("2302"=1))
   expect_equal(counts$"#.6"$"0",c("2302"=1))
 })
-
