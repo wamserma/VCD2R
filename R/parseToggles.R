@@ -108,8 +108,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
 
   timestamps <- vector("list",0L)
 
-  # making counts itself a hashtable makes things,
-  # but we can make a sig to bucketIdx LUT for faster list element accesses
+  # we can make a sig to bucketIdx LUT for faster list element accesses
 
   nameIdxList <- 1L:as.integer(length(counts))
   names(nameIdxList) <- names(counts)
