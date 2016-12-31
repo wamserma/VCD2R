@@ -53,6 +53,14 @@ test_that("simple accumulating works",{
   expect_equal(counts$`#`,list("0"=c("2296"=2),"1"=integer(0),"z"=integer(0),"x"=integer(0)))
 })
 
+test_that("parsing with timestamp limit works",{
+  vcd<-VCDFile("wikipedia.vcd")
+  parsedVCD<-parseToggles(vcd,top=NA,depth=0L,maxtime="2301")
+  expect_equal(sapply(FUN=length,parsedVCD$counts$logic),c("0"=3,"1"=2,"z"=0,"x"=0))
+  expect_equal(parsedVCD$counts$logic$"0",c("0"=4,"2211"=1,"2296"=2))
+  expect_equal(parsedVCD$counts$logic$"1",c("0"=2,"2296"=1))
+})
+
 test_that("parsing and accumulating works for aliased signals",{
   vcd<-VCDFile("wikipedia-mod2.vcd")
   parsedVCD<-parseToggles(vcd,top="top",depth=0L)

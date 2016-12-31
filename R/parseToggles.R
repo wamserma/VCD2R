@@ -8,6 +8,7 @@
 #' @param vcd The VCDFile to parse
 #' @param top The top signal, if none is given the top signal of the vcdfile is taken
 #' @param depth depth in the module tree before signals are accumulated, default=0 (top only), -1 is infinite depth
+#' @param maxtime an string (!) value giving an upper limit on the timestamps to parse; NULL to parse all timestamps
 #'
 #' For more elaborate filtering of nodes, pre-edit the signal-tree in the vcd-object.
 #' Black/Whitelisting of signals is an optional further enhancement.
@@ -18,9 +19,10 @@
 #' \dontrun{
 #' parseToggles(vcd,"top",3)
 #' parseToggles(vcd,"submodule",3)
+#' parseToggles(vcd,"submodule",3,"12345678901")
 #' }
 
-parseToggles <- function(vcd,top=NA,depth=0L){
+parseToggles <- function(vcd,top=NA,depth=0L,maxtime=NULL){
   if (!file.exists(vcd$filename)) {
     warning("File does not exist: ", vcd$filename)
     return(list())
@@ -128,6 +130,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
   # we assume dumpstart was set sensible and scan to the next timestamp
   tok$setOffset(vcd$dumpstart)
   event <- tok$nextToken()
+
   while (strHead(event) != "#") {
     event <- tok$nextToken()
     if (is.na(event)) {
@@ -149,6 +152,9 @@ parseToggles <- function(vcd,top=NA,depth=0L){
     # a TIMESTAMP
     if (indicator == "#") {
       timestamp <- strTail(event)
+      if (!is.null(maxtime)) {
+        if (numstring.lower(maxtime,timestamp)) break # end of selected range found
+      }
       timestamps<-list(prev=timestamps,val=timestamp)
     }
     # handle a DUMP-EVENT
