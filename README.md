@@ -6,6 +6,13 @@
 
 This is (hopefully) going to be a neat little package to read uncompressed VCD files into R for toggle counting, power estimation and simple side-channel analysis (on a teaching level).
 
+## Install from GitHub
+
+```r
+install.packages(c("devtools")) # if you haven't done that before
+devtools::install_github("wamserma/VCD2R",dependencies=TRUE,upgrade_dependencies=TRUE)
+```
+
 ## Building the Package manually
 
 clone the git repository
