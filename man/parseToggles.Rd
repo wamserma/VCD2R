@@ -4,14 +4,16 @@
 \alias{parseToggles}
 \title{Parses a VCD file and generated toggle count statistics.}
 \usage{
-parseToggles(vcd, top = NA, depth = 0L)
+parseToggles(vcd, top = NA, depth = 0L, maxtime = NULL)
 }
 \arguments{
 \item{vcd}{The VCDFile to parse}
 
 \item{top}{The top signal, if none is given the top signal of the vcdfile is taken}
 
-\item{depth}{depth in the module tree before signals are accumulated, default=0 (top only), -1 is infinite depth
+\item{depth}{depth in the module tree before signals are accumulated, default=0 (top only), -1 is infinite depth}
+
+\item{maxtime}{an string (!) value giving an upper limit on the timestamps to parse; NULL to parse all timestamps
 
 For more elaborate filtering of nodes, pre-edit the signal-tree in the vcd-object.
 Black/Whitelisting of signals is an optional further enhancement.}
@@ -26,6 +28,7 @@ Parses a VCD file and generated toggle count statistics.
 \dontrun{
 parseToggles(vcd,"top",3)
 parseToggles(vcd,"submodule",3)
+parseToggles(vcd,"submodule",3,"12345678901")
 }
 }
 

@@ -118,3 +118,11 @@ test_that("searching Nodes works",{
   expect_identical(list(acme$Research),
                    FindNodeGeneric(acme, "Research", field="name", traversal = "post-order", all = T))
 })
+
+test_that("comparing stringints works",{
+ expect_true(numstring.lower("3","4"))
+ expect_true(numstring.lower(as.character(42),"1234567890101"))
+ expect_false(numstring.lower("1234567890123","1234567890101"))
+ expect_true(numstring.lower("1234567890101","1234567890123"))
+ expect_false(numstring.lower("12345678901101","1234567890"))
+})

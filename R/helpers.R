@@ -144,6 +144,12 @@ sorttimestamps<-function(x){
   return(ret)
 }
 
+# test whether a is smaller b, assuming both are big integers written as strings without leading zeroes
+numstring.lower<-function(a,b){
+  sorttimestamps(c(a,b))
+  return(sorttimestamps(c(a,b))[1]==a)
+}
+
 #' map NA entries to 0
 #' @param x a (numerical) vector possibly containing NAs
 #'
