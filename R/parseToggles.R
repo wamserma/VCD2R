@@ -28,7 +28,7 @@ parseToggles <- function(vcd,top=NA,depth=0L){
 
   # assume we have a sane VCDFile object
 
-  # 1. find the desired root signal (if naems are not unique, the top most one is selected)
+  # 1. find the desired root signal (if names are not unique, the topmost one is selected)
   vartree <- vcd$hierarchy
 
   topNode <- NULL
