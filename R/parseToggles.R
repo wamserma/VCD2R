@@ -21,6 +21,7 @@
 #' parseToggles(vcd,"submodule",3)
 #' parseToggles(vcd,"submodule",3,"12345678901")
 #' }
+#' @export
 
 parseToggles <- function(vcd,top=NA,depth=0L,maxtime=NULL){
   if (!file.exists(vcd$filename)) {

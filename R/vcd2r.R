@@ -24,7 +24,7 @@ NULL
 #' VCDFile("inter.vcd")
 #' VCDFile("inter.vcd",F)
 #' }
-
+#' @export
 
 VCDFile <- function(filename = NA_character_,parseHeader = T){
   vcd <- list(
