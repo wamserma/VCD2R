@@ -2,6 +2,7 @@
 
 export(FindNodeGeneric)
 export(VCDFile)
+export(accumulate)
 export(parseToggles)
 export(plotToggles)
 importFrom(Wmisc,Tokenizer)

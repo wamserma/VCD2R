@@ -1,5 +1,11 @@
-# returns counts (and only counts) for a parseResult
 
+#' accumulate toggle counts
+#' returns accumulated counts (and only counts) for a (sub-hierarchy) of a parseResult (as returned by \link{parseToggles})
+#'
+#' @param sig the top signal of the sub-hierarchy for which counts shall be accumulated
+#' @param parseResult what has been returned by \link{parseToggles}
+#'
+#' @export
 accumulate <- function(sig,parseResult) {
   # find sig in tree - if not there warn and return
   top<-FindNodeGeneric(parseResult$hierarchy,sig,traversal = "level")
