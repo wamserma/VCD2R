@@ -64,6 +64,7 @@ As far as I know, there is no other [R] VCD parser. Below is a list with parsers
 ### Java
 [VCDFileParser](http://www.edautils.com/VCDFileParser.html) (download needs [registering](http://form.jotformpro.com/form/40758626201957))
 
-### C++
-[cppVCD](https://github.com/wsong83/cppVCD)
-[vcdparser](https://code.google.com/p/vcdparser/)
+### C/C++
+[cppVCD](https://github.com/wsong83/cppVCD)  
+[vcdparser](https://code.google.com/p/vcdparser/)  
+[Covered](http://covered.sourceforge.net/) has a built-in VCD parser
