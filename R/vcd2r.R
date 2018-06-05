@@ -2,7 +2,7 @@
 # The VCDFile Object and Related Objects (the interface stuff)
 # ====================
 
-#' VCD2R -- Loading Value Change Dumps int R.
+#' VCD2R -- Loading Value Change Dumps into R.
 #'
 #' TODO: Package doc.
 #'
@@ -32,7 +32,7 @@ VCDFile <- function(filename = NA_character_,parseHeader = T){
     date      = NA,
     version = NA_character_,
     timescale = NA_integer_,
-    dumpstart = c(0,0), # keep a of where $enddefinitons was, so we can fast-forward to it at later parsing
+    dumpstart = c(0,0), # keep track of where $enddefinitons was, so we can fast-forward to it at later parsing
     hierarchy = NA
   )
 
