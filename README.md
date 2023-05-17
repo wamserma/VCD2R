@@ -1,4 +1,4 @@
-[![Build Status](https://img.shields.io/travis/wamserma/VCD2R/master.png)](https://travis-ci.org/wamserma/VCD2R/) [![Windows Build Status](https://img.shields.io/appveyor/ci/wamserma/VCD2R/master.svg)](https://ci.appveyor.com/project/wamserma/VCD2R) [![Coverage Status](https://img.shields.io/codecov/c/github/wamserma/VCD2R/master.svg)](https://codecov.io/github/wamserma/VCD2R?branch=master)
+**NOTE** This tool was useful and served its purpose, but has now been dormant for quite some time. The repo will be archived as of May 2023 for future reference.
 
 # VCD2R - Reading Value Change Dump Files into R
 
